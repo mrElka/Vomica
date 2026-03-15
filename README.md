@@ -1,2 +1,2 @@
 # Vomica
-gay
+gay only
