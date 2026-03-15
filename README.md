@@ -1,2 +1,2 @@
 # Vomica
-gay only
+gay only and Alina
