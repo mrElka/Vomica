@@ -8,10 +8,12 @@ public class PlayerController : MonoBehaviour
     [Header("Links")]
     [SerializeField] private CharacterController _characterController;
     [SerializeField] private CinemachineCamera _cam;
+    [SerializeField] private InputHandler inputHandler;
 
     [Header("Movement")]
     [SerializeField] private float _speed = 5f;
     [SerializeField] private float _airControl = 0.5f;
+    [SerializeField] private float _rotationSpeed = 720f;
 
     [Header("Jump")]
     [SerializeField] private float _jumpHeight = 1.5f;
@@ -28,15 +30,59 @@ public class PlayerController : MonoBehaviour
 
     private Vector2 _moveInput;
     private Vector3 _velocity;
+    private Vector3 _moveDirection;
     private bool _isGrounded;
+    private bool _canMove = true;
 
     private bool _isDashing;
     private float _dashTimer;
     private float _dashCooldownTimer;
     private Vector3 _dashDirection;
 
+    public bool CanMove => _canMove;
+    public bool IsDashing => _isDashing;
+    public bool IsGrounded => _isGrounded;
+
+    private void Awake()
+    {
+        if (_characterController == null)
+            _characterController = GetComponent<CharacterController>();
+
+        if (inputHandler == null)
+            inputHandler = GetComponent<InputHandler>();
+
+        if (inputHandler == null)
+            inputHandler = gameObject.AddComponent<InputHandler>();
+    }
+
+    public void OnMove(InputValue val)
+    {
+        if (inputHandler == null)
+            _moveInput = val.Get<Vector2>();
+    }
+
+    public void OnJump(InputValue val)
+    {
+        if (val.isPressed)
+            TryJump();
+    }
+
+    public void OnDash(InputValue val)
+    {
+        if (val.isPressed)
+            TryDash();
+    }
+
     void Update()
     {
+        ReadInput();
+
+        if (!_canMove)
+        {
+            HandleGravity();
+            return;
+        }
+
         CheckGround();
         HandleDash();
         HandleMovement();
@@ -45,40 +91,40 @@ public class PlayerController : MonoBehaviour
 
     // ================= INPUT =================
 
-    public void OnMove(InputValue val)
+    void ReadInput()
     {
-        _moveInput = val.Get<Vector2>();
+        if (inputHandler == null)
+            return;
+
+        _moveInput = inputHandler.MovementInput;
+
+        if (inputHandler.JumpPressed)
+            TryJump();
+
+        if (inputHandler.DashPressed)
+            TryDash();
     }
 
-    public void OnJump(InputValue val)
+    void TryJump()
     {
-        if (val.isPressed && _isGrounded && !_isDashing)
+        if (_isGrounded && !_isDashing && _canMove)
         {
             _velocity.y = Mathf.Sqrt(_jumpHeight * -2f * _gravity);
         }
     }
 
-    public void OnDash(InputValue val)
+    void TryDash()
     {
-        if (val.isPressed && _dashCooldownTimer <= 0 && !_isDashing)
+        if (_dashCooldownTimer <= 0 && !_isDashing && _canMove)
         {
             _isDashing = true;
             _dashTimer = _dashTime;
             _dashCooldownTimer = _dashCooldown;
 
-            Vector3 camForward = _cam.transform.forward;
-            Vector3 camRight = _cam.transform.right;
-
-            camForward.y = 0;
-            camRight.y = 0;
-
-            camForward.Normalize();
-            camRight.Normalize();
-
-            Vector3 move = camRight * _moveInput.x + camForward * _moveInput.y;
+            Vector3 move = GetCameraRelativeMove();
 
             if (move == Vector3.zero)
-                move = camForward;
+                move = GetCameraFlatForward();
 
             _dashDirection = move.normalized;
         }
@@ -109,20 +155,17 @@ public class PlayerController : MonoBehaviour
     {
         if (_isDashing) return;
 
-        Vector3 camForward = _cam.transform.forward;
-        Vector3 camRight = _cam.transform.right;
+        _moveDirection = GetCameraRelativeMove();
 
-        camForward.y = 0;
-        camRight.y = 0;
+        float inputMagnitude = Mathf.Clamp01(new Vector3(_moveInput.x, 0f, _moveInput.y).magnitude);
+        float currentSpeed = inputMagnitude * (_isGrounded ? _speed : _speed * _airControl);
 
-        camForward.Normalize();
-        camRight.Normalize();
-
-        Vector3 move = camRight * _moveInput.x + camForward * _moveInput.y;
-
-        float currentSpeed = _isGrounded ? _speed : _speed * _airControl;
-
-        _characterController.Move(move * currentSpeed * Time.deltaTime);
+        if (_moveDirection.sqrMagnitude > 0.0001f)
+        {
+            _moveDirection.Normalize();
+            _characterController.Move(_moveDirection * currentSpeed * Time.deltaTime);
+            RotateTowards(_moveDirection);
+        }
     }
 
     // ================= DASH =================
@@ -135,6 +178,7 @@ public class PlayerController : MonoBehaviour
         if (_isDashing)
         {
             _characterController.Move(_dashDirection * _dashSpeed * Time.deltaTime);
+            RotateTowards(_dashDirection);
 
             _dashTimer -= Time.deltaTime;
 
@@ -149,6 +193,51 @@ public class PlayerController : MonoBehaviour
     {
         _velocity.y += _gravity * Time.deltaTime;
         _characterController.Move(_velocity * Time.deltaTime);
+    }
+
+    public void SetCanMove(bool value)
+    {
+        _canMove = value;
+        _moveInput = Vector2.zero;
+        _isDashing = false;
+    }
+
+    Vector3 GetCameraRelativeMove()
+    {
+        Vector3 input = new Vector3(_moveInput.x, 0f, _moveInput.y);
+
+        if (_cam == null)
+            return input;
+
+        return Quaternion.AngleAxis(_cam.transform.eulerAngles.y, Vector3.up) * input;
+    }
+
+    Vector3 GetCameraFlatForward()
+    {
+        if (_cam == null)
+            return transform.forward;
+
+        Vector3 forward = _cam.transform.forward;
+        forward.y = 0f;
+        return forward.sqrMagnitude > 0.0001f ? forward.normalized : transform.forward;
+    }
+
+    void RotateTowards(Vector3 direction)
+    {
+        if (_cam != null && _cam.transform.IsChildOf(transform))
+            return;
+
+        direction.y = 0f;
+
+        if (direction.sqrMagnitude < 0.0001f)
+            return;
+
+        Quaternion toRotation = Quaternion.LookRotation(direction, Vector3.up);
+        transform.rotation = Quaternion.RotateTowards(
+            transform.rotation,
+            toRotation,
+            _rotationSpeed * Time.deltaTime
+        );
     }
 
     // ================= DEBUG =================
