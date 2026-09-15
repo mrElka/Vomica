@@ -9,9 +9,14 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private CharacterController _characterController;
     [SerializeField] private CinemachineCamera _cam;
     [SerializeField] private InputHandler inputHandler;
+    [SerializeField] private PlayerStamina stamina;
+
+    [Header("Cursor")]
+    [SerializeField] private bool _lockCursorOnStart = true;
 
     [Header("Movement")]
     [SerializeField] private float _speed = 5f;
+    [SerializeField] private float _runMultiplier = 1.6f;
     [SerializeField] private float _airControl = 0.5f;
     [SerializeField] private float _rotationSpeed = 720f;
 
@@ -33,6 +38,7 @@ public class PlayerController : MonoBehaviour
     private Vector3 _moveDirection;
     private bool _isGrounded;
     private bool _canMove = true;
+    private bool _isRunning;
 
     private bool _isDashing;
     private float _dashTimer;
@@ -42,6 +48,7 @@ public class PlayerController : MonoBehaviour
     public bool CanMove => _canMove;
     public bool IsDashing => _isDashing;
     public bool IsGrounded => _isGrounded;
+    public bool IsRunning => _isRunning;
 
     private void Awake()
     {
@@ -53,6 +60,22 @@ public class PlayerController : MonoBehaviour
 
         if (inputHandler == null)
             inputHandler = gameObject.AddComponent<InputHandler>();
+
+        if (stamina == null)
+            stamina = GetComponent<PlayerStamina>();
+
+        if (stamina == null)
+            stamina = gameObject.AddComponent<PlayerStamina>();
+
+    }
+
+    private void Start()
+    {
+        if (_lockCursorOnStart)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
     }
 
     public void OnMove(InputValue val)
@@ -63,14 +86,12 @@ public class PlayerController : MonoBehaviour
 
     public void OnJump(InputValue val)
     {
-        if (val.isPressed)
-            TryJump();
+        if (val.isPressed) TryJump();
     }
 
     public void OnDash(InputValue val)
     {
-        if (val.isPressed)
-            TryDash();
+        if (val.isPressed) TryDash();
     }
 
     void Update()
@@ -93,44 +114,36 @@ public class PlayerController : MonoBehaviour
 
     void ReadInput()
     {
-        if (inputHandler == null)
-            return;
+        if (inputHandler == null) return;
 
         _moveInput = inputHandler.MovementInput;
 
-        if (inputHandler.JumpPressed)
-            TryJump();
-
-        if (inputHandler.DashPressed)
-            TryDash();
+        if (inputHandler.JumpPressed) TryJump();
+        if (inputHandler.DashPressed) TryDash();
     }
 
     void TryJump()
     {
         if (_isGrounded && !_isDashing && _canMove)
-        {
             _velocity.y = Mathf.Sqrt(_jumpHeight * -2f * _gravity);
-        }
     }
 
     void TryDash()
     {
-        if (_dashCooldownTimer <= 0 && !_isDashing && _canMove)
-        {
-            _isDashing = true;
-            _dashTimer = _dashTime;
-            _dashCooldownTimer = _dashCooldown;
+        if (_dashCooldownTimer > 0 || _isDashing || !_canMove) return;
+        if (stamina != null && !stamina.TrySpendDash()) return; // нет стамины — нет рывка
 
-            Vector3 move = GetCameraRelativeMove();
+        _isDashing = true;
+        _dashTimer = _dashTime;
+        _dashCooldownTimer = _dashCooldown;
 
-            if (move == Vector3.zero)
-                move = GetCameraFlatForward();
+        Vector3 move = GetCameraRelativeMove();
+        if (move == Vector3.zero) move = GetCameraFlatForward();
 
-            _dashDirection = move.normalized;
-        }
+        _dashDirection = move.normalized;
     }
 
-    // ================= GROUND (Raycast от центра) =================
+    // ================= GROUND =================
 
     void CheckGround()
     {
@@ -144,9 +157,7 @@ public class PlayerController : MonoBehaviour
         );
 
         if (_isGrounded && _velocity.y < 0)
-        {
             _velocity.y = -2f;
-        }
     }
 
     // ================= MOVEMENT =================
@@ -158,7 +169,20 @@ public class PlayerController : MonoBehaviour
         _moveDirection = GetCameraRelativeMove();
 
         float inputMagnitude = Mathf.Clamp01(new Vector3(_moveInput.x, 0f, _moveInput.y).magnitude);
-        float currentSpeed = inputMagnitude * (_isGrounded ? _speed : _speed * _airControl);
+
+        // Бег: удерживаем клавишу + есть стамина + движемся + на земле
+        _isRunning = inputHandler != null
+                     && inputHandler.RunHeld
+                     && inputMagnitude > 0.1f
+                     && _isGrounded
+                     && stamina != null
+                     && !stamina.IsEmpty;
+
+        if (_isRunning)
+            stamina.DrainRun(Time.deltaTime);
+
+        float speed = _speed * (_isRunning ? _runMultiplier : 1f);
+        float currentSpeed = inputMagnitude * (_isGrounded ? speed : speed * _airControl);
 
         if (_moveDirection.sqrMagnitude > 0.0001f)
         {
@@ -181,9 +205,7 @@ public class PlayerController : MonoBehaviour
             RotateTowards(_dashDirection);
 
             _dashTimer -= Time.deltaTime;
-
-            if (_dashTimer <= 0)
-                _isDashing = false;
+            if (_dashTimer <= 0) _isDashing = false;
         }
     }
 
@@ -200,22 +222,21 @@ public class PlayerController : MonoBehaviour
         _canMove = value;
         _moveInput = Vector2.zero;
         _isDashing = false;
+        _isRunning = false;
     }
 
     Vector3 GetCameraRelativeMove()
     {
         Vector3 input = new Vector3(_moveInput.x, 0f, _moveInput.y);
 
-        if (_cam == null)
-            return input;
+        if (_cam == null) return input;
 
         return Quaternion.AngleAxis(_cam.transform.eulerAngles.y, Vector3.up) * input;
     }
 
     Vector3 GetCameraFlatForward()
     {
-        if (_cam == null)
-            return transform.forward;
+        if (_cam == null) return transform.forward;
 
         Vector3 forward = _cam.transform.forward;
         forward.y = 0f;
@@ -224,13 +245,10 @@ public class PlayerController : MonoBehaviour
 
     void RotateTowards(Vector3 direction)
     {
-        if (_cam != null && _cam.transform.IsChildOf(transform))
-            return;
+        if (_cam != null && _cam.transform.IsChildOf(transform)) return;
 
         direction.y = 0f;
-
-        if (direction.sqrMagnitude < 0.0001f)
-            return;
+        if (direction.sqrMagnitude < 0.0001f) return;
 
         Quaternion toRotation = Quaternion.LookRotation(direction, Vector3.up);
         transform.rotation = Quaternion.RotateTowards(
@@ -240,8 +258,6 @@ public class PlayerController : MonoBehaviour
         );
     }
 
-    // ================= DEBUG =================
-
     private void OnDrawGizmos()
     {
         if (_characterController == null) return;
@@ -249,9 +265,6 @@ public class PlayerController : MonoBehaviour
         float rayLength = (_characterController.height / 2f) + _groundOffset;
 
         Gizmos.color = Color.red;
-        Gizmos.DrawLine(
-            transform.position,
-            transform.position + Vector3.down * rayLength
-        );
+        Gizmos.DrawLine(transform.position, transform.position + Vector3.down * rayLength);
     }
 }

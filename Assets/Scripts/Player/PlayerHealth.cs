@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -11,6 +11,9 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private int _currentHealth = 100;
     [SerializeField] private HealthBar healthBar;
 
+    [Header("Armor")]
+    [SerializeField] private PlayerArmor armor;
+
     [Header("Death")]
     [SerializeField] private string _menuSceneName = "SampleScene";
     [SerializeField] private float _loadMenuDelay = 1f;
@@ -21,6 +24,7 @@ public class PlayerHealth : MonoBehaviour
     public int MaxHealth => _maxHealth;
     public int CurrentHealth => _currentHealth;
     public bool IsDead => _isDead || _currentHealth <= 0;
+    public PlayerArmor Armor => armor;
 
     private void Awake()
     {
@@ -32,6 +36,13 @@ public class PlayerHealth : MonoBehaviour
 
         Instance = this;
         _playerController = GetComponent<PlayerController>();
+
+        if (armor == null)
+            armor = GetComponent<PlayerArmor>();
+
+        if (armor == null)
+            armor = gameObject.AddComponent<PlayerArmor>(); // на случай, если забыл повесить вручную
+
         _currentHealth = Mathf.Clamp(_currentHealth, 0, _maxHealth);
 
         if (healthBar == null)
@@ -54,11 +65,27 @@ public class PlayerHealth : MonoBehaviour
         if (IsDead || damage <= 0)
             return;
 
-        _currentHealth = Mathf.Max(0, _currentHealth - damage);
+        // Броня (тело) + шлем режут урон раздельно
+        int finalDamage = armor != null ? armor.ApplyArmor(damage) : damage;
+
+        _currentHealth = Mathf.Max(0, _currentHealth - finalDamage);
         healthBar?.SetHealth(_currentHealth);
         SyncHud();
 
-        Debug.Log($"Player HP: {_currentHealth}/{_maxHealth}");
+        if (armor != null)
+        {
+            Debug.Log(
+                $"DMG: {damage} → {finalDamage} " +
+                $"(body {armor.Body.DamageReductionPercent:F0}%, " +
+                $"helmet {armor.Helmet.DamageReductionPercent:F0}%, " +
+                $"total -{armor.TotalReduction * 100f:F0}%) | " +
+                $"HP: {_currentHealth}/{_maxHealth}"
+            );
+        }
+        else
+        {
+            Debug.Log($"DMG: {damage} | HP: {_currentHealth}/{_maxHealth}");
+        }
 
         if (_currentHealth <= 0)
             Die();
@@ -86,8 +113,7 @@ public class PlayerHealth : MonoBehaviour
 
     private void Die()
     {
-        if (_isDead)
-            return;
+        if (_isDead) return;
 
         _isDead = true;
         _playerController?.SetCanMove(false);
@@ -109,12 +135,10 @@ public class PlayerHealth : MonoBehaviour
 
     private void SyncHud()
     {
-        if (HUDManager.Instance == null)
-            return;
+        if (HUDManager.Instance == null) return;
 
         HUDData data = HUDManager.Instance.GetHUDData();
-        if (data == null)
-            return;
+        if (data == null) return;
 
         data.healthPercent = _maxHealth > 0 ? (float)_currentHealth / _maxHealth : 0f;
         data.isDamaged = _currentHealth < _maxHealth;
