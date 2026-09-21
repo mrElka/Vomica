@@ -8,6 +8,7 @@ public class MainMenu : MonoBehaviour
     [Header("Настройки сцен")]
     [Tooltip("Название сцены для кнопки TestLoc (должна быть добавлена в Build Settings)")]
     [SerializeField] private string testLocSceneName;
+    [SerializeField] private string continueSceneName;
 
     [Header("UI загрузки")]
     [SerializeField] private GameObject loadingPanel;
@@ -37,7 +38,13 @@ public class MainMenu : MonoBehaviour
 
     public void Continue()
     {
-        Debug.Log("Продолжить игру");
+        if (string.IsNullOrEmpty(continueSceneName))
+        {
+            Debug.LogWarning("Cont: имя сцены не задано в инспекторе!");
+            return;
+        }
+
+        StartCoroutine(LoadSceneAsync(continueSceneName));
     }
 
     public void Settings()
