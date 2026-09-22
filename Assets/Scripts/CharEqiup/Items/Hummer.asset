@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterEquipment.EquipmentItem
   itemId: weapon_3
   displayName: "\u041C\u043E\u043B\u043E\u0442"
-  description: 
-  icon: {fileID: 0}
+  description: "\u041E\u0442\u0431\u0438\u0432\u0430\u0435\u0442 \u0431\u0440\u043E\u043D\u044E,
+    \u043A\u043E\u0441\u0442\u0438 \u0438 \u0436\u0435\u043B\u0430\u043D\u0438\u0435
+    \u0434\u0440\u0430\u0442\u044C\u0441\u044F"
+  icon: {fileID: 21300000, guid: 10ac0c3f827eba74a9e6c52293e2ed4f, type: 3}
   category: 2
   weaponSubCategory: 1
   modelPrefab: {fileID: 2134474218785128756, guid: 66dc42b625241764488fa500772892d2, type: 3}

@@ -17,7 +17,7 @@ MonoBehaviour:
   description: "\u042D\u0442\u043E \u0432\u0435\u0434\u0440\u043E \u043D\u0430\u0448\u043B\u0438
     \u0432 \u043F\u043E\u0434\u0441\u043E\u0431\u043A\u0435, \u0442\u0435\u043F\u0435\u0440\u044C
     \u0448\u043B\u0435\u043C, \u043B\u0443\u0447\u0448\u0435 \u0447\u0435\u043C \u043D\u0438\u0447\u0435\u0433\u043E"
-  icon: {fileID: 21300000, guid: 39b70cb70c118fa4c99cfbba2992810b, type: 3}
+  icon: {fileID: 21300000, guid: 4ea51d6239421b54995c9bbb0c1fd33d, type: 3}
   category: 0
   weaponSubCategory: 0
   modelPrefab: {fileID: 7489349845076321189, guid: a836524ed7b98c94f901b1ba1380bd58, type: 3}
