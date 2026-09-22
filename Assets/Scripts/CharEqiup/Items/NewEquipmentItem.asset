@@ -10,19 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 322c9206aeec2f84995de6736b7e6f1a, type: 3}
-  m_Name: shapka
+  m_Name: NewEquipmentItem
   m_EditorClassIdentifier: Assembly-CSharp::CharacterEquipment.EquipmentItem
-  itemId: shapka
-  displayName: "\u0428\u0430\u043F\u043A\u0430"
+  itemId: 
+  displayName: 
   description: 
-  icon: {fileID: 21300000, guid: 3eb03f114e438c94f8e7719dc76a500d, type: 3}
+  icon: {fileID: 0}
   category: 0
   weaponSubCategory: 0
-  modelPrefab: {fileID: 2042393991455299564, guid: 6e3e0e67697e601469b20f91cdce21a6, type: 3}
-  stats:
-  - label: "\u0417\u0430\u0449\u0438\u0442\u0430"
-    value: 100
-    maxValue: 999
-  - label: "\u0412\u0435\u0441"
-    value: 100
-    maxValue: 900
+  modelPrefab: {fileID: 0}
+  stats: []

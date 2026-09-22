@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 322c9206aeec2f84995de6736b7e6f1a, type: 3}
-  m_Name: T0_hekm
+  m_Name: T0_helm
   m_EditorClassIdentifier: Assembly-CSharp::CharacterEquipment.EquipmentItem
-  itemId: bucket
+  itemId: helm_0
   displayName: "\u0414\u044B\u0440\u044F\u0432\u043E\u0435 \u0412\u0435\u0434\u0440\u043E"
   description: "\u042D\u0442\u043E \u0432\u0435\u0434\u0440\u043E \u043D\u0430\u0448\u043B\u0438
     \u0432 \u043F\u043E\u0434\u0441\u043E\u0431\u043A\u0435, \u0442\u0435\u043F\u0435\u0440\u044C

@@ -1,13 +1,7 @@
 fileFormatVersion: 2
-<<<<<<< HEAD
-guid: f960b149e348fcd41ba7e541b825f677
-ModelImporter:
-  serializedVersion: 22200
-=======
-guid: 55ac171fc614e4984a7830aaa63770cc
+guid: 3e67788fee01e234d993a3778e372d14
 ModelImporter:
   serializedVersion: 24200
->>>>>>> fcf4fe0769464c5d93560435652c3e858ea26449
   internalIDToNameTable: []
   externalObjects: {}
   materials:
@@ -62,12 +56,9 @@ ModelImporter:
     maxBonesPerVertex: 4
     minBoneWeight: 0.001
     optimizeBones: 1
-<<<<<<< HEAD
-=======
     generateMeshLods: 0
     meshLodGenerationFlags: 0
     maximumMeshLod: -1
->>>>>>> fcf4fe0769464c5d93560435652c3e858ea26449
     meshOptimizationFlags: -1
     indexFormat: 0
     secondaryUVAngleDistortion: 8

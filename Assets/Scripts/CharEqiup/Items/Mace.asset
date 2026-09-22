@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 322c9206aeec2f84995de6736b7e6f1a, type: 3}
+  m_Name: Mace
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterEquipment.EquipmentItem
+  itemId: weapon_1
+  displayName: "\u0411\u0443\u043B\u0430\u0432\u0430"
+  description: "\u0411\u043E\u043B\u044C\u0448\u0430\u044F, \u0442\u044F\u0436\u0435\u043B\u0430\u044F
+    \u0438 \u043A\u043E\u043B\u044E\u0447\u0430\u044F"
+  icon: {fileID: 21300000, guid: 16f1661eaf8a5004891c5b757b4a5b12, type: 3}
+  category: 2
+  weaponSubCategory: 1
+  modelPrefab: {fileID: 6859861675309514045, guid: 003df7c18f40c574b892ffb7e0ddee7c, type: 3}
+  stats:
+  - label: 
+    value: 0
+    maxValue: 0
+  - label: 
+    value: 0
+    maxValue: 0
+  - label: 
+    value: 0
+    maxValue: 0

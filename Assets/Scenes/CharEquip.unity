@@ -436,7 +436,7 @@ Transform:
   m_GameObject: {fileID: 25345942}
   serializedVersion: 2
   m_LocalRotation: {x: 0.09636935, y: -0.057174172, z: 0.0055448543, w: 0.99368674}
-  m_LocalPosition: {x: -134.6, y: 8.9, z: 267.55}
+  m_LocalPosition: {x: -134.07, y: 8.79, z: 266.33}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4497,7 +4497,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 461210160}
   m_Enabled: 1
-  serializedVersion: 13
+  serializedVersion: 12
   m_Type: 1
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
   m_Intensity: 1
@@ -4549,7 +4549,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShapeRadius: 0.025
+  m_ShadowRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -8928,7 +8928,7 @@ Transform:
   m_GameObject: {fileID: 955313727}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 6.17, y: 4.58, z: 0.93}
+  m_LocalPosition: {x: 6.1, y: 4.39, z: 1.03}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -15351,7 +15351,6 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_UseReflectionProbes: 0
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
