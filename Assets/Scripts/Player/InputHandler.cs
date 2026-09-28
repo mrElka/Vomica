@@ -11,15 +11,14 @@ public class InputHandler : MonoBehaviour
     public bool PausePressed { get; private set; }
     public bool JumpPressed { get; private set; }
     public bool DashPressed { get; private set; }
-
-    /// <summary>Удержание клавиши бега (LeftCtrl).</summary>
     public bool RunHeld { get; private set; }
-
-    /// <summary>Переключение вида от первого и третьего лица (V).</summary>
     public bool ToggleViewPressed { get; private set; }
 
-    /// <summary>Нажатая цифра 1..9 как индекс слота 0..8. -1 — ничего не нажато.</summary>
-    public int WeaponSlotPressed { get; private set; }
+    /// <summary>
+    /// Номер слота оружия, нажатый в этом кадре. -1 = ничего не нажато.
+    /// 1..9 — соответствующая клавиша.
+    /// </summary>
+    public int WeaponSlotPressed { get; private set; } = -1;
 
     private void Update()
     {
@@ -28,6 +27,9 @@ public class InputHandler : MonoBehaviour
 
         float x = 0f;
         float y = 0f;
+
+        // Сброс разовых событий
+        WeaponSlotPressed = -1;
 
         if (keyboard != null)
         {
@@ -41,12 +43,20 @@ public class InputHandler : MonoBehaviour
             InteractPressed = keyboard.eKey.wasPressedThisFrame;
             InventoryPressed = keyboard.iKey.wasPressedThisFrame;
             PausePressed = keyboard.escapeKey.wasPressedThisFrame;
+            ToggleViewPressed = keyboard.vKey.wasPressedThisFrame;
 
-            // Бег — удержание LeftCtrl
             RunHeld = keyboard.leftCtrlKey.isPressed;
 
-            ToggleViewPressed = keyboard.vKey.wasPressedThisFrame;
-            WeaponSlotPressed = ReadWeaponSlot(keyboard);
+            // ==== Слоты оружия: 1..9 ====
+            if (keyboard.digit1Key.wasPressedThisFrame) WeaponSlotPressed = 1;
+            else if (keyboard.digit2Key.wasPressedThisFrame) WeaponSlotPressed = 2;
+            else if (keyboard.digit3Key.wasPressedThisFrame) WeaponSlotPressed = 3;
+            else if (keyboard.digit4Key.wasPressedThisFrame) WeaponSlotPressed = 4;
+            else if (keyboard.digit5Key.wasPressedThisFrame) WeaponSlotPressed = 5;
+            else if (keyboard.digit6Key.wasPressedThisFrame) WeaponSlotPressed = 6;
+            else if (keyboard.digit7Key.wasPressedThisFrame) WeaponSlotPressed = 7;
+            else if (keyboard.digit8Key.wasPressedThisFrame) WeaponSlotPressed = 8;
+            else if (keyboard.digit9Key.wasPressedThisFrame) WeaponSlotPressed = 9;
         }
         else
         {
@@ -55,27 +65,14 @@ public class InputHandler : MonoBehaviour
             InteractPressed = false;
             InventoryPressed = false;
             PausePressed = false;
-            RunHeld = false;
             ToggleViewPressed = false;
-            WeaponSlotPressed = -1;
+            RunHeld = false;
         }
 
         MovementInput = Vector2.ClampMagnitude(new Vector2(x, y), 1f);
         AttackPressed = mouse != null && mouse.leftButton.wasPressedThisFrame;
-    }
 
-    private static int ReadWeaponSlot(Keyboard keyboard)
-    {
-        if (keyboard.digit1Key.wasPressedThisFrame) return 0;
-        if (keyboard.digit2Key.wasPressedThisFrame) return 1;
-        if (keyboard.digit3Key.wasPressedThisFrame) return 2;
-        if (keyboard.digit4Key.wasPressedThisFrame) return 3;
-        if (keyboard.digit5Key.wasPressedThisFrame) return 4;
-        if (keyboard.digit6Key.wasPressedThisFrame) return 5;
-        if (keyboard.digit7Key.wasPressedThisFrame) return 6;
-        if (keyboard.digit8Key.wasPressedThisFrame) return 7;
-        if (keyboard.digit9Key.wasPressedThisFrame) return 8;
-
-        return -1;
+        if (InventoryPressed)
+            Debug.Log("I pressed");
     }
 }

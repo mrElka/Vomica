@@ -15,8 +15,18 @@ public class WeaponItem
     [Tooltip("Класс задаёт урон и его тип, дальность, цикл, замах и выносливость")]
     public WeaponClass weaponClass = WeaponClass.Sword;
 
-    [Tooltip("Префаб модели. Спавнится в точке крепления при выборе этого оружия")]
+    [Tooltip("Префаб или FBX модели. Спавнится в точке крепления при выборе оружия")]
     public GameObject model;
+
+    [Header("Позиция в руке")]
+    [Tooltip("Сдвиг модели относительно кости руки")]
+    public Vector3 handPosition = Vector3.zero;
+
+    [Tooltip("Поворот модели в градусах")]
+    public Vector3 handEulerRotation = Vector3.zero;
+
+    [Tooltip("Масштаб модели (после компенсации масштаба руки)")]
+    public Vector3 handScale = Vector3.one;
 
     public string ResolvedName => string.IsNullOrWhiteSpace(displayName)
         ? VomicaBalance.GetWeapon(weaponClass).DisplayName
@@ -208,8 +218,26 @@ public class PlayerWeapons : MonoBehaviour
             Transform parent = modelAttachPoint != null ? modelAttachPoint : transform;
 
             spawnedModel = Instantiate(item.model, parent);
-            spawnedModel.transform.localPosition = Vector3.zero;
-            spawnedModel.transform.localRotation = Quaternion.identity;
+
+            // Позиция и поворот — из WeaponItem
+            spawnedModel.transform.localPosition = item.handPosition;
+            spawnedModel.transform.localRotation = Quaternion.Euler(item.handEulerRotation);
+
+            // Компенсируем масштаб родителя (кости руки), чтобы модель не раздувалась
+            Vector3 parentScale = parent.lossyScale;
+            Vector3 compensation = new Vector3(
+                parentScale.x != 0f ? 1f / parentScale.x : 1f,
+                parentScale.y != 0f ? 1f / parentScale.y : 1f,
+                parentScale.z != 0f ? 1f / parentScale.z : 1f
+            );
+
+            spawnedModel.transform.localScale = Vector3.Scale(compensation, item.handScale);
+
+            if (logWeaponChange)
+            {
+                Debug.Log($"[Weapon] Клон: {spawnedModel.name}, parent={parent.name}, " +
+                          $"pos={item.handPosition}, rot={item.handEulerRotation}, scale={item.handScale}");
+            }
         }
 
         if (logWeaponChange)
@@ -224,5 +252,9 @@ public class PlayerWeapons : MonoBehaviour
             selectedItem = -1;
         else
             selectedItem = Mathf.Clamp(selectedItem, -1, weapons.Count - 1);
+
+        // Форсим ApplySelection в следующем Update, чтобы правки в инспекторе
+        // (позиция, поворот, масштаб) применялись без перезапуска Play
+        appliedItem = int.MinValue;
     }
 }
