@@ -1,4 +1,4 @@
-using UnityEngine;
+п»їusing UnityEngine;
 
 [CreateAssetMenu(menuName = "HUD/HUDData", fileName = "HUDData")]
 public class HUDData : ScriptableObject
@@ -9,9 +9,9 @@ public class HUDData : ScriptableObject
     [Range(0f, 1f)] public float shieldPercent = 1f;
 
     [Header("Defense (player)")]
-    [Tooltip("Текущее снижение урона телом как доля 0..1 (например, 20% = 0.2)")]
+    [Tooltip("РўРµРєСѓС‰РµРµ СЃРЅРёР¶РµРЅРёРµ СѓСЂРѕРЅР° С‚РµР»РѕРј РєР°Рє РґРѕР»СЏ 0..1 (РЅР°РїСЂРёРјРµСЂ, 20% = 0.2)")]
     [Range(0f, 1f)] public float armorPercent = 0f;
-    [Tooltip("Текущее снижение урона шлемом как доля 0..1")]
+    [Tooltip("РўРµРєСѓС‰РµРµ СЃРЅРёР¶РµРЅРёРµ СѓСЂРѕРЅР° С€Р»РµРјРѕРј РєР°Рє РґРѕР»СЏ 0..1")]
     [Range(0f, 1f)] public float helmetPercent = 0f;
 
     [Header("Ammo")]

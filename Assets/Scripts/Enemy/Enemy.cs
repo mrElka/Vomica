@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -20,17 +20,56 @@ public class Enemy : MonoBehaviour
     [Header("AI")]
     public float lookRadius = 10f;
 
+    [Header("Balance v0.1")]
+    [Tooltip("Класс оружия. Unarmed - урон, дальность и цикл берутся из полей выше")]
+    public WeaponClass weaponClass = WeaponClass.Unarmed;
+
+    [Tooltip("Тип урона, когда класс оружия не выбран")]
+    public DamageType damageType = DamageType.Blunt;
+
+    [Tooltip("Куда приходит удар по игроку: шлем закрывает голову, броня - корпус")]
+    public BodyZone hitZone = BodyZone.Torso;
+
+    [Tooltip("Защита A этого противника. 0 - урон проходит целиком")]
+    public float armorA = 0f;
+
+    [Tooltip("Профиль материала брони: задаёт стойкость к рубящему, колющему и дробящему")]
+    public ArmorProfile armorProfile = ArmorProfile.None;
+
     private bool canAttack = true;
     private bool isDead;
+
+    // HP с дробной частью: формула брони даёт нецелый урон
+    private float hpExact;
 
     public event Action OnDeath;
     public bool IsDead => isDead;
     public int CurrentHealth => health;
 
+    /// <summary>Урон одного удара с разбивкой по типам.</summary>
+    public DamagePacket AttackDamage => weaponClass != WeaponClass.Unarmed
+        ? VomicaBalance.GetWeapon(weaponClass).Damage
+        : DamagePacket.Of(damageType, damage);
+
+    /// <summary>Дальность удара от центра противника, м.</summary>
+    public float AttackReach => weaponClass != WeaponClass.Unarmed
+        ? VomicaBalance.GetWeapon(weaponClass).Range
+        : attackDistance;
+
+    /// <summary>Полный цикл атаки, с.</summary>
+    public float AttackCycle => weaponClass != WeaponClass.Unarmed
+        ? VomicaBalance.GetWeapon(weaponClass).Cycle
+        : attackCooldown;
+
+    private void Awake()
+    {
+        hpExact = health;
+    }
+
     private void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        agent.stoppingDistance = attackDistance;
+        agent.stoppingDistance = AttackReach;
         agent.speed = Mathf.Max(agent.speed, 3.5f);
 
         if (PlayerHealth.Instance != null)
@@ -62,7 +101,7 @@ public class Enemy : MonoBehaviour
             return;
         }
 
-        if (distance > attackDistance)
+        if (distance > AttackReach)
         {
             SetAgentStopped(false);
 
@@ -78,7 +117,7 @@ public class Enemy : MonoBehaviour
             {
                 canAttack = false;
                 DealDamage();
-                Invoke(nameof(EndAttack), attackCooldown);
+                Invoke(nameof(EndAttack), AttackCycle);
             }
         }
     }
@@ -93,9 +132,9 @@ public class Enemy : MonoBehaviour
 
         float distance = Vector3.Distance(target.position, transform.position);
 
-        if (distance <= attackDistance + 1f)
+        if (distance <= AttackReach + 1f)
         {
-            PlayerHealth.Instance.TakeDamage(damage);
+            PlayerHealth.Instance.TakeDamage(AttackDamage, hitZone);
             Debug.Log("Player HP: " + PlayerHealth.Instance.CurrentHealth);
         }
     }
@@ -105,17 +144,40 @@ public class Enemy : MonoBehaviour
         canAttack = true;
     }
 
-    public void TakeDamage(int damageAmount)
+    /// <summary>
+    /// Урон с разбивкой по типам. Защита считается по формуле из документа:
+    /// эффективная броня = A x коэффициент материала под этот удар.
+    /// </summary>
+    public void TakeDamage(DamagePacket incoming)
     {
         if (isDead)
             return;
 
-        health -= damageAmount;
+        float loss = VomicaBalance.ComputeHpLoss(incoming, armorA, armorProfile);
+
+        Debug.Log($"{name}: {incoming} vs A={armorA:0.#} {armorProfile} -> {loss:F2} HP");
+
+        ApplyHpLoss(loss);
+    }
+
+    /// <summary>Урон без типа: проходит мимо расчёта брони.</summary>
+    public void TakeDamage(int damageAmount)
+    {
+        ApplyHpLoss(damageAmount);
+    }
+
+    private void ApplyHpLoss(float loss)
+    {
+        if (isDead || loss <= 0f)
+            return;
+
+        hpExact = Mathf.Max(0f, hpExact - loss);
+        health = Mathf.CeilToInt(hpExact);
 
         if (healthBar != null)
             healthBar.SetHealth(health);
 
-        if (health <= 0)
+        if (hpExact <= 0f)
             Die();
     }
 
@@ -161,6 +223,6 @@ public class Enemy : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, lookRadius);
 
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, attackDistance);
+        Gizmos.DrawWireSphere(transform.position, AttackReach);
     }
 }

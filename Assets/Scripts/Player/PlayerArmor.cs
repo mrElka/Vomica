@@ -7,8 +7,48 @@ public class ArmorSlot
     [SerializeField, Range(0f, 100f)] private float _damageReductionPercent = 0f;
     [SerializeField] private bool _isEquipped = true;
 
+    [Header("Balance v0.1")]
+    [Tooltip("Базовая защита A из таблицы набора брони. 0 — работает старая модель в процентах")]
+    [SerializeField] private float _armorA = 0f;
+
+    [Tooltip("Профиль материала: меняет защиту A против рубящего, колющего и дробящего")]
+    [SerializeField] private ArmorProfile _profile = ArmorProfile.None;
+
+    [Tooltip("Штраф движения за этот предмет, доля: 0.02 = -2%")]
+    [SerializeField, Range(0f, 0.5f)] private float _movementPenalty = 0f;
+
+    [Tooltip("Штраф частоты атак за этот предмет, доля")]
+    [SerializeField, Range(0f, 0.5f)] private float _attackPenalty = 0f;
+
     public string Name => _name;
     public bool IsEquipped => _isEquipped;
+
+    /// <summary>Базовая защита A. Если слот не надет — 0.</summary>
+    public float ArmorA
+    {
+        get => _isEquipped ? Mathf.Max(0f, _armorA) : 0f;
+        set => _armorA = Mathf.Max(0f, value);
+    }
+
+    public ArmorProfile Profile
+    {
+        get => _profile;
+        set => _profile = value;
+    }
+
+    public float MovementPenalty => _isEquipped ? _movementPenalty : 0f;
+
+    public float AttackPenalty => _isEquipped ? _attackPenalty : 0f;
+
+    /// <summary>Взять значения из таблицы набора брони (раздел 5 документа).</summary>
+    public void ApplyPreset(ArmorItemPreset preset)
+    {
+        _name = preset.DisplayName;
+        _armorA = preset.ArmorA;
+        _profile = preset.Profile;
+        _movementPenalty = preset.MovementPenalty;
+        _attackPenalty = preset.AttackPenalty;
+    }
 
     /// <summary>Снижение урона в процентах (0..100). Если слот не надет — 0.</summary>
     public float DamageReductionPercent
@@ -70,6 +110,37 @@ public class PlayerArmor : MonoBehaviour
 
         float final = incomingDamage * (1f - TotalReduction);
         return Mathf.Max(0, Mathf.RoundToInt(final));
+    }
+
+    // ==== Модель из документа: A + профиль материала, защита только поражённой зоны ====
+
+    /// <summary>Сумма штрафов движения от надетых предметов, доля.</summary>
+    public float MovementPenalty01 => Mathf.Clamp01(_body.MovementPenalty + _helmet.MovementPenalty);
+
+    /// <summary>Сумма штрафов частоты атак от надетых предметов, доля.</summary>
+    public float AttackSpeedPenalty01 => Mathf.Clamp01(_body.AttackPenalty + _helmet.AttackPenalty);
+
+    /// <summary>true — хотя бы у одного слота задана защита A, значит работает модель из документа.</summary>
+    public bool UsesBalanceModel => _body.ArmorA > 0f || _helmet.ArmorA > 0f;
+
+    /// <summary>Слот, который защищает указанную зону. Броня разных зон не складывается.</summary>
+    public ArmorSlot GetSlot(BodyZone zone) => zone == BodyZone.Head ? _helmet : _body;
+
+    /// <summary>
+    /// Потеря HP от попадания с учётом типов урона. Если у задетой зоны задана защита A,
+    /// считается по формуле документа, иначе остаётся старая модель в процентах.
+    /// </summary>
+    public float ApplyArmor(DamagePacket damage, BodyZone zone = BodyZone.Torso)
+    {
+        float total = damage.Total;
+        if (total <= 0f) return 0f;
+
+        ArmorSlot slot = GetSlot(zone);
+
+        if (slot.ArmorA > 0f)
+            return VomicaBalance.ComputeHpLoss(damage, slot.ArmorA, slot.Profile);
+
+        return total * (1f - TotalReduction);
     }
 
     // ==== Рантайм-API ====

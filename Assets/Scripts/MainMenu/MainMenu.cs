@@ -1,19 +1,19 @@
-using System.Collections;
+п»їusing System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class MainMenu : MonoBehaviour
 {
-    [Header("Настройки сцен")]
-    [Tooltip("Название сцены для кнопки TestLoc (должна быть добавлена в Build Settings)")]
+    [Header("РќР°СЃС‚СЂРѕР№РєРё СЃС†РµРЅ")]
+    [Tooltip("РќР°Р·РІР°РЅРёРµ СЃС†РµРЅС‹ РґР»СЏ РєРЅРѕРїРєРё TestLoc (РґРѕР»Р¶РЅР° Р±С‹С‚СЊ РґРѕР±Р°РІР»РµРЅР° РІ Build Settings)")]
     [SerializeField] private string testLocSceneName;
     [SerializeField] private string continueSceneName;
 
-    [Header("UI загрузки")]
+    [Header("UI Р·Р°РіСЂСѓР·РєРё")]
     [SerializeField] private GameObject loadingPanel;
     [SerializeField] private Slider progressBar;
-    [SerializeField] private GameObject mainMenuPanel; // чтобы скрыть кнопки
+    [SerializeField] private GameObject mainMenuPanel; // С‡С‚РѕР±С‹ СЃРєСЂС‹С‚СЊ РєРЅРѕРїРєРё
 
     public void PlayGame()
     {
@@ -22,14 +22,14 @@ public class MainMenu : MonoBehaviour
 
     public void NewGame()
     {
-        Debug.Log("Начать новую игру");
+        Debug.Log("РќР°С‡Р°С‚СЊ РЅРѕРІСѓСЋ РёРіСЂСѓ");
     }
 
     public void TestLoc()
     {
         if (string.IsNullOrEmpty(testLocSceneName))
         {
-            Debug.LogWarning("TestLoc: имя сцены не задано в инспекторе!");
+            Debug.LogWarning("TestLoc: РёРјСЏ СЃС†РµРЅС‹ РЅРµ Р·Р°РґР°РЅРѕ РІ РёРЅСЃРїРµРєС‚РѕСЂРµ!");
             return;
         }
 
@@ -40,7 +40,7 @@ public class MainMenu : MonoBehaviour
     {
         if (string.IsNullOrEmpty(continueSceneName))
         {
-            Debug.LogWarning("Cont: имя сцены не задано в инспекторе!");
+            Debug.LogWarning("Cont: РёРјСЏ СЃС†РµРЅС‹ РЅРµ Р·Р°РґР°РЅРѕ РІ РёРЅСЃРїРµРєС‚РѕСЂРµ!");
             return;
         }
 
@@ -49,12 +49,12 @@ public class MainMenu : MonoBehaviour
 
     public void Settings()
     {
-        Debug.Log("Открыть настройки");
+        Debug.Log("РћС‚РєСЂС‹С‚СЊ РЅР°СЃС‚СЂРѕР№РєРё");
     }
 
     public void ExitGame()
     {
-        Debug.Log("Выход");
+        Debug.Log("Р’С‹С…РѕРґ");
         Application.Quit();
     }
 
@@ -73,12 +73,12 @@ public class MainMenu : MonoBehaviour
 
         AsyncOperation op = SceneManager.LoadSceneAsync(sceneName);
 
-        // Не переключать сцену автоматически — ждём, пока UI покажет 100%
+        // РќРµ РїРµСЂРµРєР»СЋС‡Р°С‚СЊ СЃС†РµРЅСѓ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё вЂ” Р¶РґС‘Рј, РїРѕРєР° UI РїРѕРєР°Р¶РµС‚ 100%
         op.allowSceneActivation = false;
 
         while (!op.isDone)
         {
-            // progress доходит до 0.9, потом ждёт allowSceneActivation
+            // progress РґРѕС…РѕРґРёС‚ РґРѕ 0.9, РїРѕС‚РѕРј Р¶РґС‘С‚ allowSceneActivation
             float progress = Mathf.Clamp01(op.progress / 0.9f);
 
             if (progressBar != null)
@@ -86,7 +86,7 @@ public class MainMenu : MonoBehaviour
 
             if (progress >= 1f)
             {
-                // Можно добавить небольшую паузу для красоты
+                // РњРѕР¶РЅРѕ РґРѕР±Р°РІРёС‚СЊ РЅРµР±РѕР»СЊС€СѓСЋ РїР°СѓР·Сѓ РґР»СЏ РєСЂР°СЃРѕС‚С‹
                 yield return new WaitForSeconds(0.2f);
                 op.allowSceneActivation = true;
             }

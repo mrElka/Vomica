@@ -1,4 +1,4 @@
-using Unity.Cinemachine;
+﻿using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -10,6 +10,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private CinemachineCamera _cam;
     [SerializeField] private InputHandler inputHandler;
     [SerializeField] private PlayerStamina stamina;
+    [Tooltip("Нужна для штрафа движения от надетой брони")]
+    [SerializeField] private PlayerArmor armor;
 
     [Header("Cursor")]
     [SerializeField] private bool _lockCursorOnStart = true;
@@ -50,6 +52,16 @@ public class PlayerController : MonoBehaviour
     public bool IsGrounded => _isGrounded;
     public bool IsRunning => _isRunning;
 
+    /// <summary>
+    /// Камера, относительно которой считается движение. Переключается CameraSwitcher:
+    /// у камеры от первого лица тело не разворачивается, у камеры от третьего — разворачивается.
+    /// </summary>
+    public CinemachineCamera ActiveCamera
+    {
+        get => _cam;
+        set => _cam = value;
+    }
+
     private void Awake()
     {
         if (_characterController == null)
@@ -67,10 +79,16 @@ public class PlayerController : MonoBehaviour
         if (stamina == null)
             stamina = gameObject.AddComponent<PlayerStamina>();
 
+        if (armor == null)
+            armor = GetComponent<PlayerArmor>();
     }
 
     private void Start()
     {
+        // PlayerHealth создаёт PlayerArmor в Awake, поэтому добираем ссылку здесь
+        if (armor == null)
+            armor = GetComponent<PlayerArmor>();
+
         if (_lockCursorOnStart)
         {
             Cursor.lockState = CursorLockMode.Locked;
@@ -182,6 +200,11 @@ public class PlayerController : MonoBehaviour
             stamina.DrainRun(Time.deltaTime);
 
         float speed = _speed * (_isRunning ? _runMultiplier : 1f);
+
+        // Скорость движения = базовая x (1 - сумма штрафов движения)
+        if (armor != null)
+            speed = VomicaBalance.ApplyMovementPenalty(speed, armor.MovementPenalty01);
+
         float currentSpeed = inputMagnitude * (_isGrounded ? speed : speed * _airControl);
 
         if (_moveDirection.sqrMagnitude > 0.0001f)

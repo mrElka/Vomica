@@ -21,6 +21,9 @@ public class PlayerHealth : MonoBehaviour
     private PlayerController _playerController;
     private bool _isDead;
 
+    // HP хранится с дробной частью: формула брони из документа даёт нецелый урон
+    private float _hpExact;
+
     public int MaxHealth => _maxHealth;
     public int CurrentHealth => _currentHealth;
     public bool IsDead => _isDead || _currentHealth <= 0;
@@ -44,6 +47,7 @@ public class PlayerHealth : MonoBehaviour
             armor = gameObject.AddComponent<PlayerArmor>(); // на случай, если забыл повесить вручную
 
         _currentHealth = Mathf.Clamp(_currentHealth, 0, _maxHealth);
+        _hpExact = _currentHealth;
 
         if (healthBar == null)
             healthBar = HealthBar.CreateScreenBar();
@@ -68,9 +72,7 @@ public class PlayerHealth : MonoBehaviour
         // Броня (тело) + шлем режут урон раздельно
         int finalDamage = armor != null ? armor.ApplyArmor(damage) : damage;
 
-        _currentHealth = Mathf.Max(0, _currentHealth - finalDamage);
-        healthBar?.SetHealth(_currentHealth);
-        SyncHud();
+        ApplyHpLoss(finalDamage);
 
         if (armor != null)
         {
@@ -96,18 +98,46 @@ public class PlayerHealth : MonoBehaviour
         if (IsDead || amount <= 0)
             return;
 
-        _currentHealth = Mathf.Min(_maxHealth, _currentHealth + amount);
-        healthBar?.SetHealth(_currentHealth);
-        SyncHud();
+        SetExactHealth(_hpExact + amount);
     }
 
     public void SetHealth(int newHealth)
     {
-        _currentHealth = Mathf.Clamp(newHealth, 0, _maxHealth);
+        SetExactHealth(newHealth);
+    }
+
+    /// <summary>
+    /// Урон с разбивкой по типам. Защита берётся у задетой зоны: шлем отвечает
+    /// за голову, броня корпуса — за остальное, и они не складываются.
+    /// </summary>
+    public void TakeDamage(DamagePacket damage, BodyZone zone = BodyZone.Torso)
+    {
+        if (IsDead || damage.Total <= 0f)
+            return;
+
+        float loss = armor != null ? armor.ApplyArmor(damage, zone) : damage.Total;
+
+        ApplyHpLoss(loss);
+
+        Debug.Log($"DMG {damage} [{zone}] -> {loss:F2} HP | HP: {_hpExact:F1}/{_maxHealth}");
+    }
+
+    private void ApplyHpLoss(float loss)
+    {
+        if (loss <= 0f) return;
+
+        SetExactHealth(_hpExact - loss);
+    }
+
+    private void SetExactHealth(float value)
+    {
+        _hpExact = Mathf.Clamp(value, 0f, _maxHealth);
+        _currentHealth = Mathf.CeilToInt(_hpExact);
+
         healthBar?.SetHealth(_currentHealth);
         SyncHud();
 
-        if (_currentHealth <= 0)
+        if (_hpExact <= 0f)
             Die();
     }
 
