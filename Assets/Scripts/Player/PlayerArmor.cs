@@ -50,6 +50,27 @@ public class ArmorSlot
         _attackPenalty = preset.AttackPenalty;
     }
 
+    /// <summary>Надеть предмет из инвентаря с параметрами из документа баланса.</summary>
+    public void Wear(string name, float armorA, ArmorProfile profile, float movementPenalty, float attackPenalty)
+    {
+        _name = name;
+        _armorA = Mathf.Max(0f, armorA);
+        _profile = profile;
+        _movementPenalty = movementPenalty;
+        _attackPenalty = attackPenalty;
+        _isEquipped = true;
+    }
+
+    /// <summary>Снять предмет: слот перестаёт защищать и штрафовать.</summary>
+    public void TakeOff()
+    {
+        _armorA = 0f;
+        _profile = ArmorProfile.None;
+        _movementPenalty = 0f;
+        _attackPenalty = 0f;
+        _isEquipped = false;
+    }
+
     /// <summary>Снижение урона в процентах (0..100). Если слот не надет — 0.</summary>
     public float DamageReductionPercent
     {

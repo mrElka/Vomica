@@ -20,6 +20,8 @@ MonoBehaviour:
   category: 2
   weaponSubCategory: 1
   modelPrefab: {fileID: 7349302111374141029, guid: 54cdf7748a40ccc49a6457ddf59d4b0c, type: 3}
+  maxStack: 1
+  weaponClass: 2
   stats:
   - label: "\u0423\u0440\u043E\u043D"
     value: 3

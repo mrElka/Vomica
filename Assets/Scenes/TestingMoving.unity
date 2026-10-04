@@ -631,6 +631,7 @@ GameObject:
   - component: {fileID: 483721274}
   - component: {fileID: 483721275}
   - component: {fileID: 483721276}
+  - component: {fileID: 483721277}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -952,6 +953,53 @@ MonoBehaviour:
   inputHandler: {fileID: 483721274}
   playerController: {fileID: 483721270}
   playerCombat: {fileID: 483721273}
+--- !u!114 &483721277
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 483721264}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f6a0b2c4d5e7f9a1b3c5d6e8f0a2b4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInventory
+  database: {fileID: 11400000, guid: 7a5cff1d734643e458cb458db4df4462, type: 2}
+  startingItems:
+  - slotId: weapon
+    itemId: weapon_2
+    count: 1
+  - slotId: hotbar_0
+    itemId: weapon_0
+    count: 1
+  - slotId: hotbar_1
+    itemId: weapon_4
+    count: 1
+  - slotId: hotbar_2
+    itemId: weapon_1
+    count: 1
+  - slotId: hotbar_3
+    itemId: weapon_3
+    count: 1
+  - slotId: hotbar_4
+    itemId: weapon2_1
+    count: 1
+  - slotId: hotbar_5
+    itemId: helm_0
+    count: 1
+  - slotId: inv_0
+    itemId: helm_1
+    count: 1
+  useSave: 1
+  saveFileName: inventory.json
+  hotbarNumberKeys: 1
+  inputHandler: {fileID: 483721274}
+  weapons: {fileID: 483721275}
+  armor: {fileID: 0}
+  characterEquipment: {fileID: 0}
+  selectedItems: []
+  selectedItemsJson: 
 --- !u!1 &612800001
 GameObject:
   m_ObjectHideFlags: 0

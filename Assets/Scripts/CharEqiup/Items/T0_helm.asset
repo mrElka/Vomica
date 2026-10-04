@@ -21,6 +21,11 @@ MonoBehaviour:
   category: 0
   weaponSubCategory: 0
   modelPrefab: {fileID: 7489349845076321189, guid: a836524ed7b98c94f901b1ba1380bd58, type: 3}
+  maxStack: 1
+  armorA: 4
+  armorProfile: 4
+  movementPenalty: 0.01
+  attackPenalty: 0
   stats:
   - label: "\u0417\u0430\u0449\u0438\u0442\u0430"
     value: 1
