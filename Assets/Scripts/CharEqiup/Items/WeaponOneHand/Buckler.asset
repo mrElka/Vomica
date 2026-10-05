@@ -21,10 +21,6 @@ MonoBehaviour:
   modelPrefab: {fileID: 6544773013948332668, guid: 6fe4ef255bdfcf94487eb5ffd554b018, type: 3}
   modelPrefabLeft: {fileID: 6544773013948332668, guid: 6fe4ef255bdfcf94487eb5ffd554b018, type: 3}
   holdPose: 2
-  maxStack: 1
   weaponClass: 9
-  armorA: 0
-  armorProfile: 0
-  movementPenalty: 0
-  attackPenalty: 0
-  stats: []
+  armorPiece: 0
+  extraStats: []

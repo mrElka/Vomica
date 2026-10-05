@@ -35,41 +35,141 @@ namespace CharacterEquipment
         [Tooltip("Поза, которая включится в аниматоре при экипировке.")]
         public HoldPose holdPose = HoldPose.None;
 
-        [Header("Инвентарь")]
-        [Tooltip("Сколько штук помещается в один слот. Для экипировки — 1")]
-        [Min(1)] public int maxStack = 1;
-
-        [Header("Баланс v0.1: оружие")]
-        [Tooltip("Класс оружия из документа баланса: задаёт урон, дальность, цикл и выносливость")]
+        [Header("Характеристики: оружие")]
+        [Tooltip("Класс из документа баланса. Задаёт урон и его тип, дальность, цикл, " +
+                 "замах, расход выносливости и количество рук. Отдельных чисел у предмета нет.")]
         public WeaponClass weaponClass = WeaponClass.Unarmed;
 
-        [Header("Баланс v0.1: броня")]
-        [Tooltip("Базовая защита A. 0 — предмет не защищает по формуле документа")]
-        [Min(0f)] public float armorA = 0f;
-        public ArmorProfile armorProfile = ArmorProfile.None;
-        [Range(0f, 0.5f)] public float movementPenalty = 0f;
-        [Range(0f, 0.5f)] public float attackPenalty = 0f;
+        [Header("Характеристики: броня")]
+        [Tooltip("Предмет из набора брони. Задаёт защиту A, профиль материала и штрафы. " +
+                 "None — предмет не защищает.")]
+        public ArmorPiece armorPiece = ArmorPiece.None;
 
-        [Header("Статы (выводятся в панели информации в виде полосок)")]
-        [Tooltip("Например для оружия: Урон / Скорость / Дальность. Для брони: Класс брони / Сила брони.")]
-        public List<EquipmentStat> stats = new List<EquipmentStat>();
+        [Header("Дополнительные статы для панели информации")]
+        [Tooltip("Полоски сверх тех, что считаются из таблиц баланса автоматически.")]
+        public List<EquipmentStat> extraStats = new List<EquipmentStat>();
 
-        // ---------- Вычисляемое из подкатегории ----------
+        // ---------- Оружие ----------
 
         public bool IsWeapon => category == EquipmentCategory.Weapon;
 
-        /// <summary> Двуручное оружие и дальнее (лук) занимают обе кисти. </summary>
-        public bool IsTwoHanded =>
-            IsWeapon && (weaponSubCategory == WeaponSubCategory.TwoHanded ||
-                         weaponSubCategory == WeaponSubCategory.Ranged);
+        /// <summary> Табличные показатели класса: урон, дальность, цикл, замах, выносливость. </summary>
+        public WeaponClassStats WeaponStats => VomicaBalance.GetWeapon(weaponClass);
+
+        public bool HasWeaponStats => IsWeapon && weaponClass != WeaponClass.Unarmed;
+
+        /// <summary>
+        /// Сколько кистей занимает предмет: 2 — двуручное, 0 — только левая, 1 — одна рука.
+        /// Главный источник — класс оружия из документа. Для лука класса в документе нет,
+        /// поэтому там решает подкатегория.
+        /// </summary>
+        public int Hands
+        {
+            get
+            {
+                if (!IsWeapon) return 0;
+                if (HasWeaponStats) return WeaponStats.Hands;
+
+                switch (weaponSubCategory)
+                {
+                    case WeaponSubCategory.TwoHanded:
+                    case WeaponSubCategory.Ranged:
+                        return 2;
+                    case WeaponSubCategory.Shield:
+                        return 0;
+                    default:
+                        return 1;
+                }
+            }
+        }
+
+        /// <summary> Двуручное оружие и лук занимают обе кисти и вытесняют щит. </summary>
+        public bool IsTwoHanded => Hands >= 2;
+
+        /// <summary> Предмет для второй руки: щит, баклер. </summary>
+        public bool IsOffHand => IsWeapon && Hands == 0;
 
         /// <summary>
         /// В какой кисти будет модель по умолчанию:
-        /// щит и дальнее (лук) — в левой, всё остальное — в правой.
+        /// щит и лук — в левой, всё остальное — в правой.
         /// </summary>
         public PreferredHand PreferredHand =>
-            weaponSubCategory == WeaponSubCategory.Shield || weaponSubCategory == WeaponSubCategory.Ranged
+            IsOffHand || weaponSubCategory == WeaponSubCategory.Shield || weaponSubCategory == WeaponSubCategory.Ranged
                 ? PreferredHand.Left
                 : PreferredHand.Right;
+
+        // ---------- Броня ----------
+
+        public bool HasArmorStats => armorPiece != ArmorPiece.None;
+
+        private ArmorItemPreset ArmorPreset
+        {
+            get
+            {
+                VomicaBalance.TryGetArmorPreset(armorPiece, out ArmorItemPreset preset);
+                return preset;
+            }
+        }
+
+        /// <summary> Базовая защита A до коэффициента материала. </summary>
+        public float ArmorA => ArmorPreset.ArmorA;
+
+        public ArmorProfile ArmorProfile => ArmorPreset.Profile;
+
+        /// <summary> Штраф скорости движения за этот предмет, доля. </summary>
+        public float MovementPenalty => ArmorPreset.MovementPenalty;
+
+        /// <summary> Штраф частоты атак за этот предмет, доля. </summary>
+        public float AttackPenalty => ArmorPreset.AttackPenalty;
+
+        // ---------- Панель информации ----------
+
+        /// <summary>
+        /// Полоски для панели информации. Считаются из таблиц баланса, поэтому
+        /// их не нужно заполнять руками у каждого предмета.
+        /// </summary>
+        public List<EquipmentStat> GetDisplayStats()
+        {
+            var result = new List<EquipmentStat>();
+
+            if (HasWeaponStats)
+            {
+                WeaponClassStats s = WeaponStats;
+
+                result.Add(new EquipmentStat { label = "Урон", value = s.Damage.Total, maxValue = 40f });
+                result.Add(new EquipmentStat { label = "Дальность", value = s.Range, maxValue = 3f });
+                result.Add(new EquipmentStat { label = "Скорость", value = s.AttacksPerSecond, maxValue = 2f });
+                result.Add(new EquipmentStat { label = "Выносливость", value = s.StaminaCost, maxValue = 26f });
+            }
+
+            if (HasArmorStats)
+            {
+                ArmorItemPreset p = ArmorPreset;
+
+                result.Add(new EquipmentStat { label = "Защита", value = p.ArmorA, maxValue = 16f });
+                result.Add(new EquipmentStat { label = "Штраф скорости", value = p.MovementPenalty, maxValue = 0.06f });
+            }
+
+            result.AddRange(extraStats);
+            return result;
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (!HasWeaponStats) return;
+
+            // Руки считаются по классу оружия, поэтому подкатегория не должна ему противоречить
+            bool subSaysTwoHanded = weaponSubCategory == WeaponSubCategory.TwoHanded ||
+                                    weaponSubCategory == WeaponSubCategory.Ranged;
+
+            if (subSaysTwoHanded != WeaponStats.IsTwoHanded)
+            {
+                Debug.LogWarning(
+                    $"[{name}] '{WeaponStats.DisplayName}' по документу занимает {WeaponStats.Hands} " +
+                    $"кисти, а подкатегория стоит {weaponSubCategory}. Руки берутся из класса оружия.", this);
+            }
+        }
+#endif
     }
 }

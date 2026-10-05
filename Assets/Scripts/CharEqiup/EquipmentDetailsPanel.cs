@@ -44,7 +44,7 @@ namespace CharacterEquipment
             }
             spawnedRows.Clear();
 
-            foreach (var stat in item.stats)
+            foreach (var stat in item.GetDisplayStats())
             {
                 var row = Instantiate(statRowPrefab, statsContainer);
                 row.Setup(stat);

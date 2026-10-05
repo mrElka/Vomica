@@ -24,6 +24,14 @@ namespace CharacterEquipment
 
         public event Action<EquipmentSlot, EquipmentItem> OnItemEquipped;
         public event Action<EquipmentSlot> OnItemUnequipped;
+
+        /// <summary>
+        /// Предмет вытеснен из слота, потому что на его место взяли другой: двуручное
+        /// выбило щит, щит выбил двуручное, новое оружие заменило старое. Такой предмет
+        /// некуда положить (инвентаря нет), поэтому его нужно выбросить в мир.
+        /// </summary>
+        public event Action<EquipmentItem> OnItemDisplaced;
+
         /// <summary> Любое изменение рук — на это подписывается контроллер поз. </summary>
         public event Action OnHandsChanged;
 
@@ -71,9 +79,10 @@ namespace CharacterEquipment
             }
         }
 
-        public void Unequip(EquipmentSlot slot)
+        /// <summary> Снять предмет со слота. Возвращает снятый предмет или null. </summary>
+        public EquipmentItem Unequip(EquipmentSlot slot)
         {
-            bool had = equipped.ContainsKey(slot);
+            equipped.TryGetValue(slot, out var removed);
 
             if (spawned.TryGetValue(slot, out var list))
             {
@@ -83,10 +92,19 @@ namespace CharacterEquipment
             }
             equipped.Remove(slot);
 
-            if (!had) return;
+            if (removed == null) return null;
 
             OnItemUnequipped?.Invoke(slot);
             if (IsHandSlot(slot)) OnHandsChanged?.Invoke();
+
+            return removed;
+        }
+
+        /// <summary> Освободить слот под новый предмет и сообщить о вытесненном. </summary>
+        private void Displace(EquipmentSlot slot)
+        {
+            var removed = Unequip(slot);
+            if (removed != null) OnItemDisplaced?.Invoke(removed);
         }
 
         public EquipmentItem GetEquipped(EquipmentSlot slot)
@@ -95,13 +113,20 @@ namespace CharacterEquipment
             return item;
         }
 
+        /// <summary>
+        /// Есть ли на модели такая точка крепления. По ней видно, кто будет показывать
+        /// модель предмета: эта система или тот, кто вешает её сам.
+        /// </summary>
+        public bool HasPoint(AttachmentPointId id) =>
+            points.TryGetValue(id, out var point) && point != null;
+
         // ---------- Логика ----------
 
         private void EquipSingle(EquipmentSlot slot, AttachmentPointId pointId, EquipmentItem item)
         {
-            if (!TryGetPoint(pointId, item, out var point)) return;
+            var point = GetPoint(pointId, item);
 
-            Unequip(slot);
+            Displace(slot);
             Register(slot, item, Spawn(item.modelPrefab, point, mirror: false));
             OnItemEquipped?.Invoke(slot, item);
         }
@@ -109,10 +134,10 @@ namespace CharacterEquipment
         private void EquipPair(EquipmentSlot slot, AttachmentPointId leftId, AttachmentPointId rightId,
                                EquipmentItem item)
         {
-            if (!TryGetPoint(leftId, item, out var left) || !TryGetPoint(rightId, item, out var right))
-                return;
+            var left = GetPoint(leftId, item);
+            var right = GetPoint(rightId, item);
 
-            Unequip(slot);
+            Displace(slot);
 
             var right_go = Spawn(item.modelPrefab, right, mirror: false);
             GameObject left_go = item.modelPrefabLeft != null
@@ -129,20 +154,20 @@ namespace CharacterEquipment
             var otherSlot = hand == PreferredHand.Right ? EquipmentSlot.LeftHand : EquipmentSlot.RightHand;
             var pointId = hand == PreferredHand.Right ? AttachmentPointId.RightHand : AttachmentPointId.LeftHand;
 
-            if (!TryGetPoint(pointId, item, out var point)) return;
+            var point = GetPoint(pointId, item);
 
-            // Двуручный занимает обе кисти — освобождаем вторую.
-            // И наоборот: если во второй руке двуручка, а мы берём что-то в эту — двуручка снимается.
+            // Двуручное занимает обе кисти — освобождаем вторую.
+            // И наоборот: если во второй руке двуручное, а мы берём что-то в эту — оно снимается.
             if (item.IsTwoHanded)
             {
-                Unequip(otherSlot);
+                Displace(otherSlot);
             }
             else if (equipped.TryGetValue(otherSlot, out var otherItem) && otherItem.IsTwoHanded)
             {
-                Unequip(otherSlot);
+                Displace(otherSlot);
             }
 
-            Unequip(slot);
+            Displace(slot);
             Register(slot, item, Spawn(item.modelPrefab, point, mirror: false));
 
             OnItemEquipped?.Invoke(slot, item);
@@ -151,17 +176,23 @@ namespace CharacterEquipment
 
         // ---------- Хелперы ----------
 
-        private bool TryGetPoint(AttachmentPointId id, EquipmentItem item, out AttachmentPoint point)
+        /// <summary>
+        /// Точка крепления или null, если её нет на модели. Предмет всё равно считается
+        /// надетым: правила рук и боевые статы не должны зависеть от того,
+        /// прикручены ли к модели точки крепления.
+        /// </summary>
+        private AttachmentPoint GetPoint(AttachmentPointId id, EquipmentItem item)
         {
-            if (points.TryGetValue(id, out point) && point != null) return true;
+            if (points.TryGetValue(id, out var point) && point != null) return point;
 
-            Debug.LogWarning($"[CharacterEquipment] Нет точки крепления {id} для '{item.displayName}'");
-            return false;
+            Debug.LogWarning($"[CharacterEquipment] Нет точки крепления {id} для " +
+                             $"'{item.displayName}' — предмет надет, но модель не появится");
+            return null;
         }
 
         private static GameObject Spawn(GameObject prefab, AttachmentPoint point, bool mirror)
         {
-            if (prefab == null) return null;
+            if (prefab == null || point == null) return null;
 
             var go = Instantiate(prefab, point.transform);
             go.transform.localPosition = Vector3.zero;

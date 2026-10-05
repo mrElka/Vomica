@@ -17,14 +17,10 @@ MonoBehaviour:
   description: 
   icon: {fileID: 21300000, guid: 10ac0c3f827eba74a9e6c52293e2ed4f, type: 3}
   category: 2
-  weaponSubCategory: 1
+  weaponSubCategory: 2
   modelPrefab: {fileID: 2134474218785128756, guid: 66dc42b625241764488fa500772892d2, type: 3}
   modelPrefabLeft: {fileID: 0}
   holdPose: 1
-  maxStack: 1
   weaponClass: 6
-  armorA: 0
-  armorProfile: 0
-  movementPenalty: 0
-  attackPenalty: 0
-  stats: []
+  armorPiece: 0
+  extraStats: []
