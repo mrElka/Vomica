@@ -95,6 +95,34 @@ public enum ArmorZoneGroup
 }
 
 /// <summary>
+/// Предмет из набора брони (раздел 5). Защита A, профиль материала и штрафы берутся
+/// по нему из таблицы VomicaBalance.ArmorPresets, а не вписываются в каждый предмет.
+/// None — открытая зона: A = 0 без штрафов.
+/// </summary>
+public enum ArmorPiece
+{
+    None = 0,
+
+    HeadBucketT0,
+    HeadVelesT1,
+    HeadGladiatrixT2,
+    HeadSecutorT3,
+    HeadProvocatorT4,
+
+    TorsoQuilted,
+    TorsoMail,
+    TorsoPlate,
+
+    ArmQuilted,
+    ArmMail,
+    ArmPlate,
+
+    LegQuilted,
+    LegMail,
+    LegPlate
+}
+
+/// <summary>
 /// Урон одного попадания, разложенный по типам. Смешанный удар булавы
 /// (20 дробящего + 6 колющего) считается одним попаданием (раздел 2).
 /// </summary>
@@ -201,6 +229,9 @@ public readonly struct WeaponClassStats
 /// <summary>Предмет из небольшого набора брони (раздел 5).</summary>
 public readonly struct ArmorItemPreset
 {
+    /// <summary>Какому значению ArmorPiece соответствует эта строка таблицы.</summary>
+    public readonly ArmorPiece Piece;
+
     public readonly string DisplayName;
     public readonly ArmorZoneGroup Zone;
     public readonly EquipWeightClass WeightClass;
@@ -217,6 +248,7 @@ public readonly struct ArmorItemPreset
     public readonly float AttackPenalty;
 
     public ArmorItemPreset(
+        ArmorPiece piece,
         string displayName,
         ArmorZoneGroup zone,
         EquipWeightClass weightClass,
@@ -225,6 +257,7 @@ public readonly struct ArmorItemPreset
         float movementPenalty,
         float attackPenalty)
     {
+        Piece = piece;
         DisplayName = displayName;
         Zone = zone;
         WeightClass = weightClass;

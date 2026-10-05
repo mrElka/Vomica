@@ -13,12 +13,13 @@ MonoBehaviour:
   m_Name: EquipmentDatabase
   m_EditorClassIdentifier: Assembly-CSharp::CharacterEquipment.EquipmentDatabase
   allItems:
-  - {fileID: 11400000, guid: 91d8421549a0bdb40b5f765342cd3940, type: 2}
-  - {fileID: 11400000, guid: e46897068eef9cc4291212cd16d51e10, type: 2}
-  - {fileID: 11400000, guid: ef592030e9e992b4caf744fd361d9755, type: 2}
-  - {fileID: 11400000, guid: 320c7f2357b16104ca43a761ff206838, type: 2}
-  - {fileID: 11400000, guid: b6ccb4770362ce24a8930d2e517b1bb4, type: 2}
-  - {fileID: 11400000, guid: e506c8e13c9e1684f9c974e1d3fc3e30, type: 2}
-  - {fileID: 11400000, guid: 8684cf44abee5274c95006f6504e27d5, type: 2}
-  - {fileID: 11400000, guid: e801d73469f85c740a1610514b6e2448, type: 2}
-  - {fileID: 11400000, guid: 800ff2b0106b801449e66890c34e4287, type: 2}
+  - {fileID: 11400000, guid: a27fbb4126a1eba49b8eed1be9d305e3, type: 2}
+  - {fileID: 11400000, guid: 2078d24a481249e4892a0eab1b8913e4, type: 2}
+  - {fileID: 11400000, guid: ebf81da7eb5089d4284d448a96d5a1e6, type: 2}
+  - {fileID: 11400000, guid: 3e0264134768fdf4aac92f1886f36252, type: 2}
+  - {fileID: 11400000, guid: 88d5284c086effa41a3aecb6c95dcebf, type: 2}
+  - {fileID: 11400000, guid: 1d375b5cfe90e1444bb58c8ac198dd35, type: 2}
+  - {fileID: 11400000, guid: afc71354a467a8540a252fc45941e783, type: 2}
+  - {fileID: 11400000, guid: b4817aef56b1a0d4dbfe3c50b1b295d1, type: 2}
+  - {fileID: 11400000, guid: fc33a92c78a6e004489c7bf168a418dc, type: 2}
+  - {fileID: 11400000, guid: 925c8012c3509db468f58b2fb1d5d843, type: 2}

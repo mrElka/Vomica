@@ -2,23 +2,24 @@ using UnityEngine;
 
 namespace CharacterEquipment
 {
+    /// <summary>
+    /// Вешается на пустой объект который является дочерним для кости персонажа
+    /// (кисть, голова, предплечье и тд)
+    /// </summary>
     public class AttachmentPoint : MonoBehaviour
     {
-        public AttachmentSlotType slotType;
-
-        [Tooltip("Заполнять только для точек под оружие (slotTyuupe = Weapon)" +
-            "None - точка принимает любую категория оружия (например одна точка в руке под всё")]
-        public WeaponSubCategory weaponSubCategory = WeaponSubCategory.None;
+        public AttachmentPointId id;
 
 #if UNITY_EDITOR
         private void OnDrawGizmos()
         {
-            Gizmos.color = slotType switch
+            Gizmos.color = id switch
             {
-                AttachmentSlotType.Helmet => Color.cyan,
-                AttachmentSlotType.Armor => Color.green,
-                AttachmentSlotType.Weapon => Color.red,
-                AttachmentSlotType.Shield => Color.yellow,
+                AttachmentPointId.Head => Color.cyan,
+                AttachmentPointId.Body => Color.green,
+                AttachmentPointId.LeftHand or AttachmentPointId.RightHand => Color.red,
+                AttachmentPointId.LeftArm or AttachmentPointId.RightArm => Color.yellow,
+                AttachmentPointId.LeftLeg or AttachmentPointId.RightLeg => Color.magenta,
                 _ => Color.white
             };
             Gizmos.DrawSphere(transform.position, 0.03f);

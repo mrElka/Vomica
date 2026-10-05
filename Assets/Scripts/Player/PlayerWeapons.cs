@@ -9,6 +9,9 @@ using UnityEngine;
 [Serializable]
 public class WeaponItem
 {
+    [Tooltip("Id предмета, совпадает с EquipmentItem.itemId. По нему инвентарь находит оружие")]
+    public string itemId = "";
+
     [Tooltip("Название для UI и логов. Пусто — возьмётся название класса")]
     public string displayName = "Новое оружие";
 
@@ -169,6 +172,37 @@ public class PlayerWeapons : MonoBehaviour
         }
 
         return false;
+    }
+
+    /// <summary>Выбрать оружие по itemId. false — такого id в списке нет.</summary>
+    public bool SelectWeaponById(string itemId)
+    {
+        int index = IndexOfId(itemId);
+        if (index < 0) return false;
+
+        SelectWeapon(index);
+        return true;
+    }
+
+    /// <summary>Индекс оружия с этим itemId или -1.</summary>
+    public int IndexOfId(string itemId)
+    {
+        if (string.IsNullOrEmpty(itemId)) return -1;
+
+        for (int i = 0; i < weapons.Count; i++)
+        {
+            if (weapons[i] != null && weapons[i].itemId == itemId)
+                return i;
+        }
+
+        return -1;
+    }
+
+    /// <summary>Цифры 1..9. Инвентарь выключает их, чтобы оружием управлял он.</summary>
+    public bool SelectWithNumberKeys
+    {
+        get => selectWithNumberKeys;
+        set => selectWithNumberKeys = value;
     }
 
     /// <summary>Убрать оружие из рук.</summary>

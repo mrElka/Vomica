@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 322c9206aeec2f84995de6736b7e6f1a, type: 3}
+  m_Name: Helm_T4
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterEquipment.EquipmentItem
+  itemId: helm_t4
+  displayName: "\u041F\u0440\u043E\u0432\u043E\u043A\u0430\u0442\u043E\u0440"
+  description: 
+  icon: {fileID: 21300000, guid: 692decbb3c864cb4192d8b632cfc0c9e, type: 3}
+  category: 0
+  weaponSubCategory: 0
+  modelPrefab: {fileID: 8672842996900556143, guid: 7858a0ac5ac84694ebc4962bfde0fd6b, type: 3}
+  modelPrefabLeft: {fileID: 0}
+  holdPose: 0
+  weaponClass: 0
+  armorPiece: 5
+  extraStats: []

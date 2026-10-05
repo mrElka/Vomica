@@ -151,25 +151,45 @@ public static class VomicaBalance
     /// </summary>
     public static readonly ArmorItemPreset[] ArmorPresets =
     {
-        //                     название                    зона                     класс                      A   профиль                         движ.  атака
-        new ArmorItemPreset("BUCKET, T0",            ArmorZoneGroup.Head,  EquipWeightClass.Light,   4f, ArmorProfile.Plate,            0.01f, 0.00f),
-        new ArmorItemPreset("VELES, T1",             ArmorZoneGroup.Head,  EquipWeightClass.Light,   7f, ArmorProfile.Leather,          0.00f, 0.00f),
-        new ArmorItemPreset("GLADIATRIX, T2",        ArmorZoneGroup.Head,  EquipWeightClass.Medium, 10f, ArmorProfile.Plate,            0.01f, 0.00f),
-        new ArmorItemPreset("SECUTOR, T3",           ArmorZoneGroup.Head,  EquipWeightClass.Heavy,  13f, ArmorProfile.Plate,            0.02f, 0.01f),
-        new ArmorItemPreset("PROVOCATOR, T4",        ArmorZoneGroup.Head,  EquipWeightClass.Heavy,  16f, ArmorProfile.ReinforcedPadded, 0.03f, 0.01f),
+        //                  предмет                        название                    зона                     класс                      A   профиль                         движ.  атака
+        new ArmorItemPreset(ArmorPiece.HeadBucketT0,     "BUCKET, T0",            ArmorZoneGroup.Head,  EquipWeightClass.Light,   4f, ArmorProfile.Plate,            0.01f, 0.00f),
+        new ArmorItemPreset(ArmorPiece.HeadVelesT1,      "VELES, T1",             ArmorZoneGroup.Head,  EquipWeightClass.Light,   7f, ArmorProfile.Leather,          0.00f, 0.00f),
+        new ArmorItemPreset(ArmorPiece.HeadGladiatrixT2, "GLADIATRIX, T2",        ArmorZoneGroup.Head,  EquipWeightClass.Medium, 10f, ArmorProfile.Plate,            0.01f, 0.00f),
+        new ArmorItemPreset(ArmorPiece.HeadSecutorT3,    "SECUTOR, T3",           ArmorZoneGroup.Head,  EquipWeightClass.Heavy,  13f, ArmorProfile.Plate,            0.02f, 0.01f),
+        new ArmorItemPreset(ArmorPiece.HeadProvocatorT4, "PROVOCATOR, T4",        ArmorZoneGroup.Head,  EquipWeightClass.Heavy,  16f, ArmorProfile.ReinforcedPadded, 0.03f, 0.01f),
 
-        new ArmorItemPreset("Стёганый нагрудник",    ArmorZoneGroup.Torso, EquipWeightClass.Light,   8f, ArmorProfile.Quilted,          0.02f, 0.00f),
-        new ArmorItemPreset("Кольчужная рубаха",     ArmorZoneGroup.Torso, EquipWeightClass.Medium, 12f, ArmorProfile.Mail,             0.04f, 0.01f),
-        new ArmorItemPreset("Пластинчатый нагрудник",ArmorZoneGroup.Torso, EquipWeightClass.Heavy,  14f, ArmorProfile.Plate,            0.06f, 0.02f),
+        new ArmorItemPreset(ArmorPiece.TorsoQuilted,     "Стёганый нагрудник",    ArmorZoneGroup.Torso, EquipWeightClass.Light,   8f, ArmorProfile.Quilted,          0.02f, 0.00f),
+        new ArmorItemPreset(ArmorPiece.TorsoMail,        "Кольчужная рубаха",     ArmorZoneGroup.Torso, EquipWeightClass.Medium, 12f, ArmorProfile.Mail,             0.04f, 0.01f),
+        new ArmorItemPreset(ArmorPiece.TorsoPlate,       "Пластинчатый нагрудник",ArmorZoneGroup.Torso, EquipWeightClass.Heavy,  14f, ArmorProfile.Plate,            0.06f, 0.02f),
 
-        new ArmorItemPreset("Стёганая маника",       ArmorZoneGroup.Arm,   EquipWeightClass.Light,   6f, ArmorProfile.Quilted,          0.00f, 0.01f),
-        new ArmorItemPreset("Кольчужная маника",     ArmorZoneGroup.Arm,   EquipWeightClass.Medium, 10f, ArmorProfile.Mail,             0.01f, 0.02f),
-        new ArmorItemPreset("Пластинчатая маника",   ArmorZoneGroup.Arm,   EquipWeightClass.Heavy,  12f, ArmorProfile.Plate,            0.01f, 0.03f),
+        new ArmorItemPreset(ArmorPiece.ArmQuilted,       "Стёганая маника",       ArmorZoneGroup.Arm,   EquipWeightClass.Light,   6f, ArmorProfile.Quilted,          0.00f, 0.01f),
+        new ArmorItemPreset(ArmorPiece.ArmMail,          "Кольчужная маника",     ArmorZoneGroup.Arm,   EquipWeightClass.Medium, 10f, ArmorProfile.Mail,             0.01f, 0.02f),
+        new ArmorItemPreset(ArmorPiece.ArmPlate,         "Пластинчатая маника",   ArmorZoneGroup.Arm,   EquipWeightClass.Heavy,  12f, ArmorProfile.Plate,            0.01f, 0.03f),
 
-        new ArmorItemPreset("Стёганая поножа",       ArmorZoneGroup.Leg,   EquipWeightClass.Light,   6f, ArmorProfile.Quilted,          0.01f, 0.00f),
-        new ArmorItemPreset("Кольчужная поножа",     ArmorZoneGroup.Leg,   EquipWeightClass.Medium, 10f, ArmorProfile.Mail,             0.02f, 0.00f),
-        new ArmorItemPreset("Пластинчатая поножа",   ArmorZoneGroup.Leg,   EquipWeightClass.Heavy,  12f, ArmorProfile.Plate,            0.03f, 0.00f),
+        new ArmorItemPreset(ArmorPiece.LegQuilted,       "Стёганая поножа",       ArmorZoneGroup.Leg,   EquipWeightClass.Light,   6f, ArmorProfile.Quilted,          0.01f, 0.00f),
+        new ArmorItemPreset(ArmorPiece.LegMail,          "Кольчужная поножа",     ArmorZoneGroup.Leg,   EquipWeightClass.Medium, 10f, ArmorProfile.Mail,             0.02f, 0.00f),
+        new ArmorItemPreset(ArmorPiece.LegPlate,         "Пластинчатая поножа",   ArmorZoneGroup.Leg,   EquipWeightClass.Heavy,  12f, ArmorProfile.Plate,            0.03f, 0.00f),
     };
+
+    /// <summary>Строка таблицы по предмету набора. false — предмет не задан (None).</summary>
+    public static bool TryGetArmorPreset(ArmorPiece piece, out ArmorItemPreset preset)
+    {
+        if (piece != ArmorPiece.None)
+        {
+            foreach (ArmorItemPreset item in ArmorPresets)
+            {
+                if (item.Piece != piece) continue;
+
+                preset = item;
+                return true;
+            }
+
+            Debug.LogError($"[Balance] В таблице брони нет строки для {piece}");
+        }
+
+        preset = default;
+        return false;
+    }
 
     /// <summary>Предмет набора по названию. Возвращает false, если такого нет.</summary>
     public static bool TryGetArmorPreset(string displayName, out ArmorItemPreset preset)
