@@ -8,7 +8,7 @@ using CharEquip = CharacterEquipment.CharacterEquipment;
 
 public enum InventorySlotKind
 {
-    /// <summary>Надетый предмет: шлем, броня, оружие, щит. Набор фиксированный.</summary>
+    /// <summary>Надетый предмет: шлем, броня, руки, ноги, оружие, щит. Набор фиксированный.</summary>
     Equipment,
     /// <summary>Быстрая панель. Первые 9 ячеек доступны по цифрам 1..9.</summary>
     Hotbar,
@@ -26,6 +26,8 @@ public static class InventorySlotIds
 
     public const string Helmet = "helmet";
     public const string Armor = "armor";
+    public const string Arms = "arms";
+    public const string Legs = "legs";
     public const string Weapon = "weapon";
     public const string Shield = "shield";
 
@@ -35,7 +37,7 @@ public static class InventorySlotIds
     /// <summary>Сколько ячеек хотбара можно выбрать цифрами 1..9.</summary>
     public const int NumberKeySlots = 9;
 
-    public static readonly string[] Equipment = { Helmet, Armor, Weapon, Shield };
+    public static readonly string[] Equipment = { Helmet, Armor, Arms, Legs, Weapon, Shield };
 
     /// <summary>hotbar_0, hotbar_1, ...</summary>
     public static string Hotbar(int index) => HotbarPrefix + index;
@@ -43,14 +45,22 @@ public static class InventorySlotIds
     /// <summary>inv_0, inv_1, ...</summary>
     public static string Backpack(int index) => BackpackPrefix + index;
 
-    public static string ForAttachment(AttachmentSlotType type)
+    /// <summary>
+    /// В какой слот экипировки идёт предмет. Щит — отдельный слот,
+    /// всё остальное оружие (одноручное, двуручное, дальнее) — в weapon.
+    /// </summary>
+    public static string ForItem(EquipmentItem item)
     {
-        switch (type)
+        if (item == null) return None;
+
+        switch (item.category)
         {
-            case AttachmentSlotType.Helmet: return Helmet;
-            case AttachmentSlotType.Armor: return Armor;
-            case AttachmentSlotType.Shield: return Shield;
-            default: return Weapon;
+            case EquipmentCategory.Helmet: return Helmet;
+            case EquipmentCategory.Armor: return Armor;
+            case EquipmentCategory.Arms: return Arms;
+            case EquipmentCategory.Legs: return Legs;
+            default:
+                return item.weaponSubCategory == WeaponSubCategory.Shield ? Shield : Weapon;
         }
     }
 }
@@ -86,9 +96,6 @@ public class InventorySlot
     public string SlotId { get; }
     public InventorySlotKind Kind { get; }
 
-    /// <summary>Какой тип предмета принимает слот экипировки. Для хотбара и рюкзака не важен.</summary>
-    public AttachmentSlotType EquipType { get; }
-
     public EquipmentItem Item { get; internal set; }
     public int Count { get; internal set; }
 
@@ -98,18 +105,17 @@ public class InventorySlot
     /// <summary>itemId лежащего предмета или "none".</summary>
     public string ItemId => IsEmpty ? InventorySlotIds.None : Item.itemId;
 
-    public InventorySlot(string slotId, InventorySlotKind kind, AttachmentSlotType equipType = AttachmentSlotType.Weapon)
+    public InventorySlot(string slotId, InventorySlotKind kind)
     {
         SlotId = slotId;
         Kind = kind;
-        EquipType = equipType;
     }
 
     /// <summary>Можно ли положить сюда предмет. null (пусто) можно всегда.</summary>
     public bool Accepts(EquipmentItem item)
     {
         if (item == null || !IsEquipment) return true;
-        return item.GetAttachmentSlotType() == EquipType;
+        return InventorySlotIds.ForItem(item) == SlotId;
     }
 }
 
@@ -198,7 +204,7 @@ public class PlayerInventory : MonoBehaviour
         Instance = this;
 
         foreach (string id in InventorySlotIds.Equipment)
-            RegisterSlot(new InventorySlot(id, InventorySlotKind.Equipment, EquipTypeOf(id)), equipmentIds);
+            RegisterSlot(new InventorySlot(id, InventorySlotKind.Equipment), equipmentIds);
 
         GrowTo(InventorySlotKind.Hotbar, hotbarSize);
         GrowTo(InventorySlotKind.Backpack, backpackSize);
@@ -279,7 +285,7 @@ public class PlayerInventory : MonoBehaviour
     /// <summary>itemId надетого предмета в слоте экипировки или "none".</summary>
     public string GetSelected(string equipmentSlotId) => GetSlot(equipmentSlotId)?.ItemId ?? InventorySlotIds.None;
 
-    /// <summary>Статус надетого: helmet / armor / weapon / shield -> itemId или "none".</summary>
+    /// <summary>Статус надетого: helmet / armor / arms / legs / weapon / shield -> itemId или "none".</summary>
     public IReadOnlyDictionary<string, string> SelectedItems
     {
         get
@@ -291,7 +297,7 @@ public class PlayerInventory : MonoBehaviour
         }
     }
 
-    /// <summary>Тот же статус строкой: {"helmet":"none","armor":"none","weapon":"weapon_2","shield":"none"}</summary>
+    /// <summary>Тот же статус строкой: {"helmet":"none","armor":"none",...,"weapon":"weapon_2","shield":"none"}</summary>
     public string SelectedItemsJson => selectedItemsJson;
 
     /// <summary>Можно ли положить предмет в слот: шлем только в helmet и т.д.</summary>
@@ -493,7 +499,7 @@ public class PlayerInventory : MonoBehaviour
         if (slot.IsEquipment)
             return Unequip(slotId);
 
-        string target = InventorySlotIds.ForAttachment(slot.Item.GetAttachmentSlotType());
+        string target = InventorySlotIds.ForItem(slot.Item);
         return Move(slotId, target);
     }
 
@@ -663,17 +669,6 @@ public class PlayerInventory : MonoBehaviour
         slotOrder.AddRange(backpackIds);
     }
 
-    private static AttachmentSlotType EquipTypeOf(string equipmentId)
-    {
-        switch (equipmentId)
-        {
-            case InventorySlotIds.Helmet: return AttachmentSlotType.Helmet;
-            case InventorySlotIds.Armor: return AttachmentSlotType.Armor;
-            case InventorySlotIds.Shield: return AttachmentSlotType.Shield;
-            default: return AttachmentSlotType.Weapon;
-        }
-    }
-
     private void PutStartingItems()
     {
         foreach (var entry in startingItems)
@@ -714,14 +709,36 @@ public class PlayerInventory : MonoBehaviour
         if (slot.IsEquipment)
         {
             ApplyEquipment(slot);
+            ResolveHandConflict(slot);
             RefreshStatus();
         }
 
         OnSlotChanged?.Invoke(slot.SlotId);
     }
 
+    /// <summary>
+    /// Двуручное (и дальнее) оружие занимает обе кисти, поэтому щит и такое оружие
+    /// не могут быть надеты одновременно. Тот, кто пришёл последним, вытесняет другого
+    /// в свободную ячейку. Если места нет — вытеснение не происходит, остаётся предупреждение.
+    /// </summary>
+    private void ResolveHandConflict(InventorySlot changed)
+    {
+        var weaponSlot = slots[InventorySlotIds.Weapon];
+        var shieldSlot = slots[InventorySlotIds.Shield];
+
+        if (weaponSlot.IsEmpty || shieldSlot.IsEmpty || !weaponSlot.Item.IsTwoHanded) return;
+
+        // Кого убирать: того, кто не менялся
+        string toRemove = changed == shieldSlot ? InventorySlotIds.Weapon : InventorySlotIds.Shield;
+        Unequip(toRemove);
+    }
+
     private void ApplyAllEquipment()
     {
+        // Сначала разрешаем конфликты рук по данным (например, из сохранения),
+        // чтобы визуально ничего не затиралось
+        ResolveHandConflict(slots[InventorySlotIds.Weapon]);
+
         foreach (string id in equipmentIds)
             ApplyEquipment(slots[id]);
     }
@@ -730,23 +747,69 @@ public class PlayerInventory : MonoBehaviour
     {
         EquipmentItem item = slot.Item;
 
-        switch (slot.EquipType)
+        switch (slot.SlotId)
         {
-            case AttachmentSlotType.Helmet:
+            case InventorySlotIds.Helmet:
                 ApplyArmor(armor != null ? armor.Helmet : null, item);
                 break;
-            case AttachmentSlotType.Armor:
+            case InventorySlotIds.Armor:
                 ApplyArmor(armor != null ? armor.Body : null, item);
                 break;
-            case AttachmentSlotType.Weapon:
+            case InventorySlotIds.Weapon:
                 ApplyWeapon(item);
                 break;
+                // arms / legs / shield: в PlayerArmor и PlayerWeapons для них нет слотов,
+                // они влияют только на внешний вид (CharacterEquipment)
         }
 
         if (characterEquipment != null)
+            SyncVisual(slot.SlotId, item);
+    }
+
+    /// <summary>Показать или убрать модель на персонаже.</summary>
+    private void SyncVisual(string slotId, EquipmentItem item)
+    {
+        if (item != null)
         {
-            if (item != null) characterEquipment.Equip(item);
-            else characterEquipment.Unequip(slot.EquipType);
+            // Нужная рука и освобождение второй — внутри CharacterEquipment
+            characterEquipment.Equip(item);
+            return;
+        }
+
+        switch (slotId)
+        {
+            case InventorySlotIds.Helmet:
+                characterEquipment.Unequip(EquipmentSlot.Helmet);
+                break;
+            case InventorySlotIds.Armor:
+                characterEquipment.Unequip(EquipmentSlot.Body);
+                break;
+            case InventorySlotIds.Arms:
+                characterEquipment.Unequip(EquipmentSlot.Arms);
+                break;
+            case InventorySlotIds.Legs:
+                characterEquipment.Unequip(EquipmentSlot.Legs);
+                break;
+
+            case InventorySlotIds.Weapon:
+                {
+                    characterEquipment.Unequip(EquipmentSlot.RightHand);
+
+                    // Лук лежит в левой кисти — его тоже надо убрать, но не щит
+                    var left = characterEquipment.GetEquipped(EquipmentSlot.LeftHand);
+                    if (left != null && left.weaponSubCategory != WeaponSubCategory.Shield)
+                        characterEquipment.Unequip(EquipmentSlot.LeftHand);
+                    break;
+                }
+
+            case InventorySlotIds.Shield:
+                {
+                    // В левой кисти может быть лук из слота weapon — его не трогаем
+                    var left = characterEquipment.GetEquipped(EquipmentSlot.LeftHand);
+                    if (left != null && left.weaponSubCategory == WeaponSubCategory.Shield)
+                        characterEquipment.Unequip(EquipmentSlot.LeftHand);
+                    break;
+                }
         }
     }
 

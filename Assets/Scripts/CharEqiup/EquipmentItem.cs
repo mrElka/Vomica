@@ -7,9 +7,7 @@ namespace CharacterEquipment
     /// Описание одного предмета экипировки как объект в ассетах. Создаётся через
     /// Assets -> Create -> Equipment -> Equipment Item
     /// </summary>
-    /// 
     [CreateAssetMenu(fileName = "NewEquipmentItem", menuName = "Equipment/Equipment Item")]
-    
     public class EquipmentItem : ScriptableObject
     {
         [Header("Основная информация")]
@@ -22,12 +20,20 @@ namespace CharacterEquipment
         public EquipmentCategory category;
 
         [Tooltip("Заполняется только если category == Weapon. " +
-                 "Shield - физически отдельный слот, но в UI лежит вкладкой внутри оружия.")]
+                 "Определяет, в какую руку и сколькими руками предмет держится.")]
         public WeaponSubCategory weaponSubCategory = WeaponSubCategory.None;
 
         [Header("Визуал")]
-        [Tooltip("Префаб модели, который будет прикреплён к точке крепления персонажа")]
+        [Tooltip("Префаб модели. Для парной брони (Arms/Legs) — модель ПРАВОЙ стороны.")]
         public GameObject modelPrefab;
+
+        [Tooltip("Только для парной брони (Arms/Legs): модель ЛЕВОЙ стороны. " +
+                 "Если пусто — основная модель будет отзеркалена по X.")]
+        public GameObject modelPrefabLeft;
+
+        [Header("Поза (только для оружия)")]
+        [Tooltip("Поза, которая включится в аниматоре при экипировке.")]
+        public HoldPose holdPose = HoldPose.None;
 
         [Header("Инвентарь")]
         [Tooltip("Сколько штук помещается в один слот. Для экипировки — 1")]
@@ -48,26 +54,22 @@ namespace CharacterEquipment
         [Tooltip("Например для оружия: Урон / Скорость / Дальность. Для брони: Класс брони / Сила брони.")]
         public List<EquipmentStat> stats = new List<EquipmentStat>();
 
+        // ---------- Вычисляемое из подкатегории ----------
+
+        public bool IsWeapon => category == EquipmentCategory.Weapon;
+
+        /// <summary> Двуручное оружие и дальнее (лук) занимают обе кисти. </summary>
+        public bool IsTwoHanded =>
+            IsWeapon && (weaponSubCategory == WeaponSubCategory.TwoHanded ||
+                         weaponSubCategory == WeaponSubCategory.Ranged);
+
         /// <summary>
-        /// Привязка к поинтам на персонаже
-        /// 
-        /// МБ позже будет привязка к позе
+        /// В какой кисти будет модель по умолчанию:
+        /// щит и дальнее (лук) — в левой, всё остальное — в правой.
         /// </summary>
-        public AttachmentSlotType GetAttachmentSlotType()
-        {
-            switch (category)
-            {
-                case EquipmentCategory.Helmet:
-                    return AttachmentSlotType.Helmet;
-                case EquipmentCategory.Armor:
-                    return AttachmentSlotType.Armor;
-                case EquipmentCategory.Weapon:
-                    return weaponSubCategory == WeaponSubCategory.Shield
-                        ? AttachmentSlotType.Shield
-                        : AttachmentSlotType.Weapon;
-                default:
-                    return AttachmentSlotType.Weapon;
-            }
-        }
+        public PreferredHand PreferredHand =>
+            weaponSubCategory == WeaponSubCategory.Shield || weaponSubCategory == WeaponSubCategory.Ranged
+                ? PreferredHand.Left
+                : PreferredHand.Right;
     }
 }
