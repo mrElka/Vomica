@@ -10,8 +10,10 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private CinemachineCamera _cam;
     [SerializeField] private InputHandler inputHandler;
     [SerializeField] private PlayerStamina stamina;
-    [Tooltip("Нужна для штрафа движения от надетой брони")]
-    [SerializeField] private PlayerArmor armor;
+
+    [Header("Visual")]
+    [Tooltip("Модель игрока, которая поворачивается вслед за камерой (FPS)")]
+    [SerializeField] private Transform _visualRoot;
 
     [Header("Cursor")]
     [SerializeField] private bool _lockCursorOnStart = true;
@@ -20,7 +22,6 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float _speed = 5f;
     [SerializeField] private float _runMultiplier = 1.6f;
     [SerializeField] private float _airControl = 0.5f;
-    [SerializeField] private float _rotationSpeed = 720f;
 
     [Header("Jump")]
     [SerializeField] private float _jumpHeight = 1.5f;
@@ -34,6 +35,14 @@ public class PlayerController : MonoBehaviour
     [Header("Ground")]
     [SerializeField] private float _groundOffset = 0.2f;
     [SerializeField] private LayerMask _groundMask;
+
+    [Header("Animation")]
+    [SerializeField] private Animator _animator;
+    [SerializeField] private string _speedParam = "Speed";
+    [SerializeField] private string _jumpTrigger = "Jump";
+    [SerializeField] private string _dashTrigger = "Dash";
+    [SerializeField] private string _runParam = "Run";
+    [SerializeField] private float _animationSmooth = 10f;
 
     private Vector2 _moveInput;
     private Vector3 _velocity;
@@ -52,14 +61,20 @@ public class PlayerController : MonoBehaviour
     public bool IsGrounded => _isGrounded;
     public bool IsRunning => _isRunning;
 
-    /// <summary>
-    /// Камера, относительно которой считается движение. Переключается CameraSwitcher:
-    /// у камеры от первого лица тело не разворачивается, у камеры от третьего — разворачивается.
-    /// </summary>
+    /// <summary>Активная камера. Переключается из CameraSwitcher.</summary>
     public CinemachineCamera ActiveCamera
     {
         get => _cam;
         set => _cam = value;
+    }
+
+    // ================= LIFECYCLE =================
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void HideCursorOnLoad()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     private void Awake()
@@ -79,17 +94,19 @@ public class PlayerController : MonoBehaviour
         if (stamina == null)
             stamina = gameObject.AddComponent<PlayerStamina>();
 
-        if (armor == null)
-            armor = GetComponent<PlayerArmor>();
-    }
-
-    private void Start()
-    {
-        // PlayerHealth создаёт PlayerArmor в Awake, поэтому добираем ссылку здесь
-        if (armor == null)
-            armor = GetComponent<PlayerArmor>();
+        if (_animator == null)
+            _animator = GetComponentInChildren<Animator>();
 
         if (_lockCursorOnStart)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+    }
+
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (hasFocus && _lockCursorOnStart)
         {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -119,6 +136,8 @@ public class PlayerController : MonoBehaviour
         if (!_canMove)
         {
             HandleGravity();
+            UpdateAnimation();
+            SyncBodyToCamera();
             return;
         }
 
@@ -126,6 +145,8 @@ public class PlayerController : MonoBehaviour
         HandleDash();
         HandleMovement();
         HandleGravity();
+        UpdateAnimation();
+        SyncBodyToCamera();
     }
 
     // ================= INPUT =================
@@ -142,14 +163,18 @@ public class PlayerController : MonoBehaviour
 
     void TryJump()
     {
-        if (_isGrounded && !_isDashing && _canMove)
-            _velocity.y = Mathf.Sqrt(_jumpHeight * -2f * _gravity);
+        if (!_isGrounded || _isDashing || !_canMove) return;
+
+        _velocity.y = Mathf.Sqrt(_jumpHeight * -2f * _gravity);
+
+        if (_animator != null)
+            _animator.SetTrigger(_jumpTrigger);
     }
 
     void TryDash()
     {
         if (_dashCooldownTimer > 0 || _isDashing || !_canMove) return;
-        if (stamina != null && !stamina.TrySpendDash()) return; // нет стамины — нет рывка
+        if (stamina != null && !stamina.TrySpendDash()) return;
 
         _isDashing = true;
         _dashTimer = _dashTime;
@@ -159,6 +184,9 @@ public class PlayerController : MonoBehaviour
         if (move == Vector3.zero) move = GetCameraFlatForward();
 
         _dashDirection = move.normalized;
+
+        if (_animator != null)
+            _animator.SetTrigger(_dashTrigger);
     }
 
     // ================= GROUND =================
@@ -188,7 +216,6 @@ public class PlayerController : MonoBehaviour
 
         float inputMagnitude = Mathf.Clamp01(new Vector3(_moveInput.x, 0f, _moveInput.y).magnitude);
 
-        // Бег: удерживаем клавишу + есть стамина + движемся + на земле
         _isRunning = inputHandler != null
                      && inputHandler.RunHeld
                      && inputMagnitude > 0.1f
@@ -196,22 +223,16 @@ public class PlayerController : MonoBehaviour
                      && stamina != null
                      && !stamina.IsEmpty;
 
-        if (_isRunning)
+        if (_isRunning && stamina != null)
             stamina.DrainRun(Time.deltaTime);
 
         float speed = _speed * (_isRunning ? _runMultiplier : 1f);
-
-        // Скорость движения = базовая x (1 - сумма штрафов движения)
-        if (armor != null)
-            speed = VomicaBalance.ApplyMovementPenalty(speed, armor.MovementPenalty01);
-
         float currentSpeed = inputMagnitude * (_isGrounded ? speed : speed * _airControl);
 
         if (_moveDirection.sqrMagnitude > 0.0001f)
         {
             _moveDirection.Normalize();
             _characterController.Move(_moveDirection * currentSpeed * Time.deltaTime);
-            RotateTowards(_moveDirection);
         }
     }
 
@@ -225,7 +246,6 @@ public class PlayerController : MonoBehaviour
         if (_isDashing)
         {
             _characterController.Move(_dashDirection * _dashSpeed * Time.deltaTime);
-            RotateTowards(_dashDirection);
 
             _dashTimer -= Time.deltaTime;
             if (_dashTimer <= 0) _isDashing = false;
@@ -240,6 +260,43 @@ public class PlayerController : MonoBehaviour
         _characterController.Move(_velocity * Time.deltaTime);
     }
 
+    // ================= ANIMATION =================
+
+    void UpdateAnimation()
+    {
+        if (_animator == null) return;
+
+        float inputMagnitude = Mathf.Clamp01(_moveInput.magnitude);
+
+        float targetSpeed = 0f;
+        if (_canMove && inputMagnitude > 0.1f)
+            targetSpeed = _isRunning ? 2f : 1f;
+
+        float smoothedSpeed = Mathf.Lerp(
+            _animator.GetFloat(_speedParam),
+            targetSpeed,
+            Time.deltaTime * _animationSmooth
+        );
+
+        _animator.SetFloat(_speedParam, smoothedSpeed);
+
+        // Передаём признак бега
+        _animator.SetBool(_runParam, _isRunning);
+    }
+
+    // ================= FPS BODY SYNC =================
+
+    /// <summary>FPS: тело всегда смотрит туда же, куда камера (по горизонтали).</summary>
+    private void SyncBodyToCamera()
+    {
+        if (_visualRoot == null || _cam == null) return;
+
+        float camYaw = _cam.transform.eulerAngles.y;
+        _visualRoot.rotation = Quaternion.Euler(0f, camYaw, 0f);
+    }
+
+    // ================= PUBLIC API =================
+
     public void SetCanMove(bool value)
     {
         _canMove = value;
@@ -247,6 +304,14 @@ public class PlayerController : MonoBehaviour
         _isDashing = false;
         _isRunning = false;
     }
+
+    public void SetCursorLocked(bool locked)
+    {
+        Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
+        Cursor.visible = !locked;
+    }
+
+    // ================= HELPERS =================
 
     Vector3 GetCameraRelativeMove()
     {
@@ -264,21 +329,6 @@ public class PlayerController : MonoBehaviour
         Vector3 forward = _cam.transform.forward;
         forward.y = 0f;
         return forward.sqrMagnitude > 0.0001f ? forward.normalized : transform.forward;
-    }
-
-    void RotateTowards(Vector3 direction)
-    {
-        if (_cam != null && _cam.transform.IsChildOf(transform)) return;
-
-        direction.y = 0f;
-        if (direction.sqrMagnitude < 0.0001f) return;
-
-        Quaternion toRotation = Quaternion.LookRotation(direction, Vector3.up);
-        transform.rotation = Quaternion.RotateTowards(
-            transform.rotation,
-            toRotation,
-            _rotationSpeed * Time.deltaTime
-        );
     }
 
     private void OnDrawGizmos()

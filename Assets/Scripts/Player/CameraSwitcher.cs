@@ -3,9 +3,8 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Переключает вид от первого и третьего лица по клавише V. Камера от первого лица
-/// берётся из сцены (та, что висит на игроке), камера от третьего лица — отдельный
-/// объект: либо назначенный вручную, либо созданный при старте.
+/// Переключает вид от первого и третьего лица по клавише V.
+/// Скрывает тело игрока в FP, показывает в TP. Руки остаются видимыми всегда.
 /// </summary>
 public class CameraSwitcher : MonoBehaviour
 {
@@ -35,6 +34,13 @@ public class CameraSwitcher : MonoBehaviour
     [Header("Старт")]
     [Tooltip("Начинать игру с видом от третьего лица")]
     [SerializeField] private bool _startInThirdPerson;
+
+    [Header("Body Visibility")]
+    [Tooltip("Корень модели игрока (hero_completed). Тело будет скрываться в FP")]
+    [SerializeField] private Transform _bodyRoot;
+
+    [Tooltip("Части тела, которые НЕ прячутся (руки, оружие) — по имени объекта")]
+    [SerializeField] private string[] _visibleParts = { "Arm.L", "Arm.R", "Hand.L", "Hand.R" };
 
     [Header("Ссылки")]
     [SerializeField] private InputHandler inputHandler;
@@ -92,7 +98,6 @@ public class CameraSwitcher : MonoBehaviour
         if (inputHandler != null)
             return inputHandler.ToggleViewPressed;
 
-        // Запас на случай, если InputHandler не повешен на игрока
         return Keyboard.current != null && Keyboard.current.vKey.wasPressedThisFrame;
     }
 
@@ -104,12 +109,13 @@ public class CameraSwitcher : MonoBehaviour
         CinemachineCamera active = ActiveCamera;
         if (active == null) return;
 
-        // Движение считается относительно активной камеры. Камера от первого лица
-        // висит на игроке, поэтому тело не разворачивается; от третьего — разворачивается.
         if (playerController != null) playerController.ActiveCamera = active;
         if (playerCombat != null) playerCombat.ActiveCamera = active;
 
-        Debug.Log($"[Camera] вид: {(_thirdPersonActive ? "третье лицо" : "первое лицо")}");
+        UpdateBodyVisibility();
+
+        Debug.Log($"[Camera] вид: {(_thirdPersonActive ? "третье лицо" : "первое лицо")}, " +
+                  $"bodyRoot={(_bodyRoot != null ? _bodyRoot.name : "NULL")}");
     }
 
     private static void SetCameraEnabled(CinemachineCamera cam, bool value)
@@ -121,6 +127,58 @@ public class CameraSwitcher : MonoBehaviour
         CinemachineInputAxisController input = cam.GetComponent<CinemachineInputAxisController>();
         if (input != null) input.enabled = value;
     }
+
+    // ================= BODY VISIBILITY =================
+
+    /// <summary>
+    /// Скрывает/показывает меши тела. Работает независимо от Culling Mask —
+    /// просто выключает Renderer у мешей.
+    /// </summary>
+    private void UpdateBodyVisibility()
+    {
+        if (_bodyRoot == null) return;
+
+        bool hideBody = !_thirdPersonActive;
+
+        foreach (Transform child in _bodyRoot.GetComponentsInChildren<Transform>(true))
+        {
+            // Руки не трогаем
+            if (ShouldStayVisible(child.name))
+                continue;
+
+            // Работаем ТОЛЬКО со Skinned Mesh (тело).
+            // Обычные Mesh Renderer (оружие, аксессуары) — не трогаем.
+            SkinnedMeshRenderer skinned = child.GetComponent<SkinnedMeshRenderer>();
+            if (skinned == null) continue;
+
+            if (hideBody)
+            {
+                // FP: тело не рисуется, но тень отбрасывает
+                skinned.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
+            }
+            else
+            {
+                // TP: тело видно и отбрасывает тень
+                skinned.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+            }
+        }
+    }
+
+    /// <summary>Проверяет, входит ли имя объекта в список видимых частей (руки).</summary>
+    private bool ShouldStayVisible(string objectName)
+    {
+        if (_visibleParts == null) return false;
+
+        foreach (string part in _visibleParts)
+        {
+            if (!string.IsNullOrEmpty(part) && objectName == part)
+                return true;
+        }
+
+        return false;
+    }
+
+    // ================= ORBIT INPUT =================
 
     private void HandleOrbitInput()
     {
@@ -137,6 +195,8 @@ public class CameraSwitcher : MonoBehaviour
         float tilt = _orbital.VerticalAxis.Value - delta.y * _mouseSensitivityY;
         _orbital.VerticalAxis.Value = Mathf.Clamp(tilt, _verticalRange.x, _verticalRange.y);
     }
+
+    // ================= THIRD PERSON CAMERA =================
 
     private CinemachineCamera BuildThirdPersonCamera()
     {
@@ -155,6 +215,6 @@ public class CameraSwitcher : MonoBehaviour
         CinemachineRotationComposer composer = rig.AddComponent<CinemachineRotationComposer>();
         composer.TargetOffset = new Vector3(0f, _shoulderHeight, 0f);
 
-        return cam;
+        return rig.GetComponent<CinemachineCamera>();
     }
 }

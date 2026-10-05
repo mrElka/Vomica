@@ -19,7 +19,7 @@ public class PlayerCombat : MonoBehaviour
     [Tooltip("Радиус сферы попадания для оружия из таблицы, м")]
     [SerializeField] private float _classHitRadius = 0.6f;
 
-    [Tooltip("Один взмах поражает одну цель: так задано в версии 0.1 документа")]
+    [Tooltip("Один взмах поражает одну цель")]
     [SerializeField] private bool _singleTargetPerSwing = true;
 
     [Header("Links")]
@@ -28,6 +28,10 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private PlayerHealth _playerHealth;
     [SerializeField] private PlayerStamina _stamina;
     [SerializeField] private InputHandler inputHandler;
+
+    [Header("Animation")]
+    [SerializeField] private Animator _animator;
+    [SerializeField] private string _attackTrigger = "Attack";
 
     [Header("Debug")]
     [SerializeField] private bool _debugShowCanAttack = true;
@@ -128,6 +132,7 @@ public class PlayerCombat : MonoBehaviour
         if (inputHandler == null) inputHandler = GetComponent<InputHandler>();
         if (_stamina == null) _stamina = GetComponent<PlayerStamina>();
         if (_weapons == null) _weapons = GetComponent<PlayerWeapons>();
+        if (_animator == null) _animator = GetComponentInChildren<Animator>();
     }
 
     private void Update()
@@ -144,6 +149,10 @@ public class PlayerCombat : MonoBehaviour
             return;
 
         _nextAttackTime = Time.time + AttackCooldown;
+
+        if (_animator != null)
+            _animator.SetTrigger(_attackTrigger);
+
         DealDamage();
     }
 
@@ -171,7 +180,6 @@ public class PlayerCombat : MonoBehaviour
                 continue;
             }
 
-            // Учитывается первая задетая зона, поэтому берём ближайшую цель
             float distance = Vector3.SqrMagnitude(enemy.transform.position - origin);
             if (distance < nearestDistance)
             {
@@ -195,6 +203,8 @@ public class PlayerCombat : MonoBehaviour
         }
         return transform.forward;
     }
+
+    // ================= DEBUG =================
 
     private void OnGUI()
     {
