@@ -1961,6 +1961,56 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 359579260}
   m_CullTransparentMesh: 1
+--- !u!1 &364402013
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 364402015}
+  - component: {fileID: 364402014}
+  m_Layer: 0
+  m_Name: MusicPlaylist
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &364402014
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 364402013}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac71b29b9ee58f14eaae3bf436ce160d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SceneAmbienceTrigger
+  playlist:
+  - {fileID: 8300000, guid: 6da7cb9e48c87a04686add3cb79fd639, type: 3}
+  - {fileID: 8300000, guid: be902dbf8467d784983af81ad4503d37, type: 3}
+  shuffle: 1
+  fadeDuration: 2
+  playOnStart: 1
+--- !u!4 &364402015
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 364402013}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 982.899, y: 584.30774, z: 52.02271}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &393260841
 GameObject:
   m_ObjectHideFlags: 0
@@ -7386,6 +7436,53 @@ MonoBehaviour:
   defaultBackground: {fileID: 21300000, guid: 3939ef24a216ec844aa78b68117188a1, type: 3}
   completedBackground: {fileID: 21300000, guid: 082c91425360ae2438a83743b2498836, type: 3}
   gameComplete: 1
+--- !u!1 &1599463437
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1599463439}
+  - component: {fileID: 1599463438}
+  m_Layer: 0
+  m_Name: MusicPlayer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1599463438
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1599463437}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53569a6bafce9d74d97adf6e90876289, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AmbiencePlayer
+  mixerGroupPath: Master/Music
+  mixer: {fileID: 24100000, guid: 88901850c4106294282f99287091f0c0, type: 2}
+  defaultFadeDuration: 2
+--- !u!4 &1599463439
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1599463437}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 982.899, y: 584.30774, z: 52.02271}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1628922458
 GameObject:
   m_ObjectHideFlags: 0
@@ -9262,3 +9359,5 @@ SceneRoots:
   - {fileID: 1514992129}
   - {fileID: 293659954}
   - {fileID: 964822833}
+  - {fileID: 1599463439}
+  - {fileID: 364402015}
