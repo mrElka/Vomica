@@ -70,7 +70,7 @@ public class InputHandler : MonoBehaviour
         }
 
         MovementInput = Vector2.ClampMagnitude(new Vector2(x, y), 1f);
-        AttackPressed = mouse != null && mouse.leftButton.wasPressedThisFrame;
+        AttackPressed = mouse != null && mouse.rightButton.wasPressedThisFrame;
 
         if (InventoryPressed)
             Debug.Log("I pressed");

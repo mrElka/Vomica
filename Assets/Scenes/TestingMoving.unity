@@ -592,7 +592,6 @@ GameObject:
   - component: {fileID: 483721276}
   - component: {fileID: 483721277}
   - component: {fileID: 483721278}
-  - component: {fileID: 483721279}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -716,7 +715,7 @@ MonoBehaviour:
   _cam: {fileID: 145987684}
   inputHandler: {fileID: 483721274}
   stamina: {fileID: 0}
-  _visualRoot: {fileID: 0}
+  _visualRoot: {fileID: 1018133691}
   _lockCursorOnStart: 1
   _speed: 5
   _runMultiplier: 1.6
@@ -730,6 +729,7 @@ MonoBehaviour:
   _groundMask:
     serializedVersion: 2
     m_Bits: 8
+  _animatorController: {fileID: 9100000, guid: 39242eaf842a9524f8f80b5d797793c9, type: 2}
   _animator: {fileID: 0}
   _speedParam: Speed
   _jumpTrigger: Jump
@@ -809,8 +809,10 @@ MonoBehaviour:
   _playerHealth: {fileID: 483721272}
   _stamina: {fileID: 0}
   inputHandler: {fileID: 483721274}
+  _animatorController: {fileID: 9100000, guid: 39242eaf842a9524f8f80b5d797793c9, type: 2}
   _animator: {fileID: 0}
   _attackTrigger: Attack
+  _syncDamageToWindup: 1
   _debugShowCanAttack: 1
 --- !u!114 &483721274
 MonoBehaviour:
@@ -900,8 +902,9 @@ MonoBehaviour:
     handPosition: {x: 0, y: 0, z: 0}
     handEulerRotation: {x: 0, y: 0, z: 0}
     handScale: {x: 1, y: 1, z: 1}
-  selectedItem: 0
-  selectWithNumberKeys: 1
+  selectedItem: -1
+  selectWithNumberKeys: 0
+  showModel: 0
   modelAttachPoint: {fileID: 0}
   inputHandler: {fileID: 483721274}
   armor: {fileID: 0}
@@ -927,7 +930,7 @@ MonoBehaviour:
   _mouseSensitivityX: 0.25
   _mouseSensitivityY: 0.2
   _startInThirdPerson: 0
-  _bodyRoot: {fileID: 0}
+  _bodyRoot: {fileID: 1018133691}
   _visibleParts:
   - Arm.L
   - Arm.R
@@ -979,29 +982,7 @@ MonoBehaviour:
   rightHand: 
   leftHand: 
   head: 
-  body: --- !u!1 &612800001
---- !u!95 &483721279
-Animator:
-  serializedVersion: 7
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 483721264}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 39242eaf842a9524f8f80b5d797793c9, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
+  body: 
 --- !u!1001 &511424747
 PrefabInstance:
   m_ObjectHideFlags: 0

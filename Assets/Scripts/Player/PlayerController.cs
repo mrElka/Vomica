@@ -37,6 +37,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private LayerMask _groundMask;
 
     [Header("Animation")]
+    [SerializeField] private RuntimeAnimatorController _animatorController;
     [SerializeField] private Animator _animator;
     [SerializeField] private string _speedParam = "Speed";
     [SerializeField] private string _jumpTrigger = "Jump";
@@ -94,8 +95,13 @@ public class PlayerController : MonoBehaviour
         if (stamina == null)
             stamina = gameObject.AddComponent<PlayerStamina>();
 
+        if (_visualRoot == null)
+            _visualRoot = PlayerAnimatorUtility.FindVisualRoot(transform);
+
         if (_animator == null)
-            _animator = GetComponentInChildren<Animator>();
+            _animator = PlayerAnimatorUtility.Resolve(transform, _animatorController);
+
+        HidePlaceholderCapsuleMesh();
 
         if (_lockCursorOnStart)
         {
@@ -329,6 +335,17 @@ public class PlayerController : MonoBehaviour
         Vector3 forward = _cam.transform.forward;
         forward.y = 0f;
         return forward.sqrMagnitude > 0.0001f ? forward.normalized : transform.forward;
+    }
+
+    private void HidePlaceholderCapsuleMesh()
+    {
+        if (_visualRoot == null) return;
+
+        var meshRenderer = GetComponent<MeshRenderer>();
+        if (meshRenderer != null) meshRenderer.enabled = false;
+
+        var meshFilter = GetComponent<MeshFilter>();
+        if (meshFilter != null) meshFilter.hideFlags = HideFlags.HideInInspector;
     }
 
     private void OnDrawGizmos()

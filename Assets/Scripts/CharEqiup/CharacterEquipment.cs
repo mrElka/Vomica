@@ -5,12 +5,52 @@ using UnityEngine;
 namespace CharacterEquipment
 {
     /// <summary>
+    /// Куда крепить предмет, если на модели нет готового AttachmentPoint.
+    /// Кость ищется по имени, поэтому новую модель достаточно назвать так же,
+    /// как названы кости в риге: Hand.R, Hand.L, Head и т.д.
+    /// </summary>
+    [Serializable]
+    public class BoneBinding
+    {
+        public AttachmentPointId id;
+
+        [Tooltip("Имя кости в риге. Регистр важен")]
+        public string boneName;
+
+        [Tooltip("Сдвиг рукояти относительно кости")]
+        public Vector3 localPosition;
+
+        [Tooltip("Поворот предмета в кости, градусы")]
+        public Vector3 localEuler;
+    }
+
+    /// <summary>
     /// Вешается на корень персонажа. Знает про точки крепления и правила экипировки:
     /// парные слоты (руки/ноги), две кисти, двуручное оружие.
     /// </summary>
     public class CharacterEquipment : MonoBehaviour
     {
+        [Tooltip("Готовые точки на модели. Пусто — точки создадутся сами по именам костей ниже")]
         [SerializeField] private List<AttachmentPoint> attachmentPoints = new List<AttachmentPoint>();
+
+        [Tooltip("Привязка слотов к костям рига. Используется для тех точек, " +
+                 "которых нет в списке выше")]
+        [SerializeField] private List<BoneBinding> boneBindings = new List<BoneBinding>
+        {
+            // Рукоять лежит в кисти под углом, иначе клинок смотрит вдоль предплечья
+            new BoneBinding { id = AttachmentPointId.RightHand, boneName = "Hand.R",
+                              localPosition = new Vector3(0f, -0.0025f, 0.005f),
+                              localEuler = new Vector3(120f, 0f, 0f) },
+            new BoneBinding { id = AttachmentPointId.LeftHand,  boneName = "Hand.L",
+                              localPosition = new Vector3(0f, -0.0025f, 0.005f),
+                              localEuler = new Vector3(120f, 0f, 0f) },
+            new BoneBinding { id = AttachmentPointId.Head,      boneName = "Head" },
+            new BoneBinding { id = AttachmentPointId.Body,      boneName = "Spine" },
+            new BoneBinding { id = AttachmentPointId.LeftArm,   boneName = "LowerArm.L" },
+            new BoneBinding { id = AttachmentPointId.RightArm,  boneName = "LowerArm.R" },
+            new BoneBinding { id = AttachmentPointId.LeftLeg,   boneName = "LowerLeg.L" },
+            new BoneBinding { id = AttachmentPointId.RightLeg,  boneName = "LowerLeg.R" }
+        };
 
         private readonly Dictionary<AttachmentPointId, AttachmentPoint> points =
             new Dictionary<AttachmentPointId, AttachmentPoint>();
@@ -42,11 +82,70 @@ namespace CharacterEquipment
 
             foreach (var p in attachmentPoints)
             {
+                if (p == null) continue;
+
                 if (points.ContainsKey(p.id))
                     Debug.LogWarning($"[CharacterEquipment] Дубликат точки {p.id} на '{p.name}'", p);
                 else
                     points[p.id] = p;
             }
+
+            BindBonesToMissingPoints();
+        }
+
+        /// <summary>
+        /// Для слотов без готовой точки находим кость по имени и вешаем точку на неё.
+        /// Так новая модель персонажа работает сразу: достаточно, чтобы кости
+        /// назывались как в boneBindings.
+        /// </summary>
+        private void BindBonesToMissingPoints()
+        {
+            if (boneBindings == null || boneBindings.Count == 0) return;
+
+            Transform[] all = GetComponentsInChildren<Transform>(true);
+
+            foreach (BoneBinding binding in boneBindings)
+            {
+                if (binding == null || string.IsNullOrWhiteSpace(binding.boneName)) continue;
+                if (points.ContainsKey(binding.id)) continue;
+
+                Transform bone = FindByName(all, binding.boneName);
+                if (bone == null) continue;
+
+                var holder = new GameObject($"AP_{binding.id}");
+                holder.transform.SetParent(bone, false);
+                holder.transform.localPosition = binding.localPosition;
+                holder.transform.localRotation = Quaternion.Euler(binding.localEuler);
+
+                AttachmentPoint point = holder.AddComponent<AttachmentPoint>();
+                point.id = binding.id;
+
+                points[binding.id] = point;
+                attachmentPoints.Add(point);
+            }
+        }
+
+        private static Transform FindByName(Transform[] all, string boneName)
+        {
+            Transform exact = null;
+            Transform suffix = null;
+
+            foreach (Transform t in all)
+            {
+                if (t == null) continue;
+
+                if (t.name == boneName)
+                {
+                    exact = t;
+                    break;
+                }
+
+                // На случай префикса в экспорте (Armature/Hand.R)
+                if (suffix == null && t.name.EndsWith(boneName, System.StringComparison.Ordinal))
+                    suffix = t;
+            }
+
+            return exact != null ? exact : suffix;
         }
 
         // ---------- Публичный API ----------
@@ -197,11 +296,20 @@ namespace CharacterEquipment
             var go = Instantiate(prefab, point.transform);
             go.transform.localPosition = Vector3.zero;
             go.transform.localRotation = Quaternion.identity;
-            if (mirror)
-            {
-                var s = go.transform.localScale;
-                go.transform.localScale = new Vector3(-s.x, s.y, s.z);
-            }
+
+            // Кости рига приходят со своим масштабом — гасим его,
+            // иначе предмет в руке раздувается или сплющивается
+            Vector3 bone = point.transform.lossyScale;
+            Vector3 scale = prefab.transform.localScale;
+            scale = new Vector3(
+                bone.x != 0f ? scale.x / bone.x : scale.x,
+                bone.y != 0f ? scale.y / bone.y : scale.y,
+                bone.z != 0f ? scale.z / bone.z : scale.z);
+
+            if (mirror) scale.x = -scale.x;
+
+            go.transform.localScale = scale;
+            EquipmentPickup.MakeVisualOnly(go);
             return go;
         }
 

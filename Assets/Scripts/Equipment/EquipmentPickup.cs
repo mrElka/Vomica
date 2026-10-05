@@ -38,6 +38,7 @@ namespace CharacterEquipment
         private void Start()
         {
             readyAt = Time.time + pickupDelay;
+            SnapToGround();
 
             if (item == null)
             {
@@ -50,13 +51,36 @@ namespace CharacterEquipment
                 model = Instantiate(item.modelPrefab, transform);
                 model.transform.localPosition = modelOffset;
                 model.transform.localRotation = Quaternion.identity;
+                MakeVisualOnly(model);
             }
         }
 
         private void Update()
         {
-            if (spinSpeed != 0f)
-                transform.Rotate(Vector3.up, spinSpeed * Time.deltaTime, Space.World);
+            if (spinSpeed != 0f && model != null)
+                model.transform.Rotate(Vector3.up, spinSpeed * Time.deltaTime, Space.Self);
+        }
+
+        private void SnapToGround()
+        {
+            Vector3 origin = transform.position + Vector3.up * 2f;
+            if (!Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 10f))
+                return;
+
+            transform.position = hit.point + Vector3.up * 0.08f;
+        }
+
+        /// <summary>Коллайдеры и Rigidbody на префабе оружия не должны тянуть предмет под пол.</summary>
+        public static void MakeVisualOnly(GameObject root)
+        {
+            foreach (Rigidbody body in root.GetComponentsInChildren<Rigidbody>(true))
+            {
+                body.isKinematic = true;
+                body.useGravity = false;
+            }
+
+            foreach (Collider col in root.GetComponentsInChildren<Collider>(true))
+                col.enabled = false;
         }
 
         /// <summary>Предмет забрали — объект больше не нужен.</summary>
@@ -82,6 +106,7 @@ namespace CharacterEquipment
             pickup.spawnModel = true;
             pickup.pickupDelay = pickupDelay;
             pickup.readyAt = Time.time + pickupDelay;
+            pickup.SnapToGround();
 
             return pickup;
         }

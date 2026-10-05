@@ -138,7 +138,14 @@ public class PlayerGear : MonoBehaviour
         if (armor == null) armor = GetComponent<PlayerArmor>();
 
         // Оружие меняется подбором, а не цифрами: иначе статы разойдутся с тем, что в руках
-        if (weapons != null) weapons.SelectWithNumberKeys = false;
+        if (weapons != null)
+        {
+            weapons.SelectWithNumberKeys = false;
+
+            // Модель на кости руки — одна; PlayerWeapons не дублирует её на корне игрока
+            if (equipment != null && equipment.HasPoint(AttachmentPointId.RightHand))
+                weapons.ShowModel = false;
+        }
 
         if (database == null)
             Debug.LogError("[Gear] Не назначена EquipmentDatabase — снаряжение не загрузится", this);
@@ -222,8 +229,8 @@ public class PlayerGear : MonoBehaviour
         Vector3 position = transform.position + transform.forward * dropForward;
 
         // Кладём на землю, чтобы предмет не висел в воздухе и не падал под пол
-        if (Physics.Raycast(position + Vector3.up, Vector3.down, out RaycastHit hit, 5f))
-            position = hit.point;
+        if (Physics.Raycast(position + Vector3.up * 2f, Vector3.down, out RaycastHit hit, 8f))
+            position = hit.point + Vector3.up * 0.08f;
 
         EquipmentPickup.Drop(item, position, dropPickupDelay);
         Debug.Log($"[Gear] Вытеснено и брошено: {item.displayName}");

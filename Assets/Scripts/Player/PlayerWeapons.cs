@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using CharacterEquipment;
 using UnityEngine;
 
 /// <summary>
@@ -59,6 +60,10 @@ public class PlayerWeapons : MonoBehaviour
     [Header("Модель")]
     [Tooltip("Куда крепить модель оружия. Пусто — корень игрока")]
     [SerializeField] private Transform modelAttachPoint;
+
+    [Tooltip("Показывать модель отсюда. Выключается, когда предмет уже висит " +
+             "на кости руки силами системы снаряжения — иначе в руке будет две модели")]
+    [SerializeField] private bool showModel = true;
 
     [Header("Ссылки")]
     [SerializeField] private InputHandler inputHandler;
@@ -205,6 +210,21 @@ public class PlayerWeapons : MonoBehaviour
         set => selectWithNumberKeys = value;
     }
 
+    /// <summary>
+    /// Спавнить модель оружия здесь. Выключается, когда модель уже на кости руки (CharacterEquipment).
+    /// </summary>
+    public bool ShowModel
+    {
+        get => showModel;
+        set
+        {
+            if (showModel == value) return;
+
+            showModel = value;
+            ApplySelection();
+        }
+    }
+
     /// <summary>Убрать оружие из рук.</summary>
     public void Unequip() => SelectWeapon(-1);
 
@@ -247,7 +267,7 @@ public class PlayerWeapons : MonoBehaviour
 
         WeaponItem item = SelectedItem;
 
-        if (item != null && item.model != null)
+        if (showModel && item != null && item.model != null)
         {
             Transform parent = modelAttachPoint != null ? modelAttachPoint : transform;
 
@@ -266,6 +286,7 @@ public class PlayerWeapons : MonoBehaviour
             );
 
             spawnedModel.transform.localScale = Vector3.Scale(compensation, item.handScale);
+            EquipmentPickup.MakeVisualOnly(spawnedModel);
 
             if (logWeaponChange)
             {

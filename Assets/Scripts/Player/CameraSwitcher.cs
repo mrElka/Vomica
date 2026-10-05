@@ -63,6 +63,9 @@ public class CameraSwitcher : MonoBehaviour
         if (playerCombat == null) playerCombat = GetComponent<PlayerCombat>();
         if (_followTarget == null) _followTarget = transform;
 
+        if (_bodyRoot == null)
+            _bodyRoot = PlayerAnimatorUtility.FindVisualRoot(transform);
+
         if (_firstPersonCamera == null)
             _firstPersonCamera = GetComponentInChildren<CinemachineCamera>(true);
 
@@ -171,7 +174,9 @@ public class CameraSwitcher : MonoBehaviour
 
         foreach (string part in _visibleParts)
         {
-            if (!string.IsNullOrEmpty(part) && objectName == part)
+            if (string.IsNullOrEmpty(part)) continue;
+
+            if (objectName == part || objectName.Contains(part))
                 return true;
         }
 

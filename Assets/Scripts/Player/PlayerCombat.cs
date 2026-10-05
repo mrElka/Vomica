@@ -1,4 +1,5 @@
-﻿using Unity.Cinemachine;
+﻿using System.Collections;
+using Unity.Cinemachine;
 using UnityEngine;
 
 public class PlayerCombat : MonoBehaviour
@@ -30,13 +31,18 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private InputHandler inputHandler;
 
     [Header("Animation")]
+    [SerializeField] private RuntimeAnimatorController _animatorController;
     [SerializeField] private Animator _animator;
     [SerializeField] private string _attackTrigger = "Attack";
+
+    [Tooltip("Урон в момент замаха из таблицы оружия, а не в кадр нажатия")]
+    [SerializeField] private bool _syncDamageToWindup = true;
 
     [Header("Debug")]
     [SerializeField] private bool _debugShowCanAttack = true;
 
     private float _nextAttackTime;
+    private Coroutine _attackRoutine;
 
     /// <summary>Камера, вдоль которой направлен удар. Переключается CameraSwitcher.</summary>
     public CinemachineCamera ActiveCamera
@@ -132,7 +138,17 @@ public class PlayerCombat : MonoBehaviour
         if (inputHandler == null) inputHandler = GetComponent<InputHandler>();
         if (_stamina == null) _stamina = GetComponent<PlayerStamina>();
         if (_weapons == null) _weapons = GetComponent<PlayerWeapons>();
-        if (_animator == null) _animator = GetComponentInChildren<Animator>();
+        if (_animator == null)
+            _animator = PlayerAnimatorUtility.Resolve(transform, _animatorController);
+    }
+
+    private void OnDisable()
+    {
+        if (_attackRoutine != null)
+        {
+            StopCoroutine(_attackRoutine);
+            _attackRoutine = null;
+        }
     }
 
     private void Update()
@@ -153,7 +169,20 @@ public class PlayerCombat : MonoBehaviour
         if (_animator != null)
             _animator.SetTrigger(_attackTrigger);
 
+        if (_attackRoutine != null)
+            StopCoroutine(_attackRoutine);
+
+        if (_syncDamageToWindup && HasClassWeapon && _weapons.Windup > 0f)
+            _attackRoutine = StartCoroutine(DealDamageAfter(_weapons.Windup));
+        else
+            DealDamage();
+    }
+
+    private IEnumerator DealDamageAfter(float delay)
+    {
+        yield return new WaitForSeconds(delay);
         DealDamage();
+        _attackRoutine = null;
     }
 
     public void DealDamage()
