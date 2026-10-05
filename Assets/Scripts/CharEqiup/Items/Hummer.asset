@@ -21,6 +21,22 @@ MonoBehaviour:
   category: 2
   weaponSubCategory: 1
   modelPrefab: {fileID: 2134474218785128756, guid: 66dc42b625241764488fa500772892d2, type: 3}
+<<<<<<< HEAD
   maxStack: 1
   weaponClass: 6
   stats: []
+=======
+  stats:
+  - label: "\u0421\u0442\u0430\u043C\u0438\u043D\u0430"
+    value: 30
+    maxValue: 0
+  - label: 
+    value: 0
+    maxValue: 0
+  - label: 
+    value: 0
+    maxValue: 0
+  - label: 
+    value: 0
+    maxValue: 0
+>>>>>>> feature/audio+scene-edit
