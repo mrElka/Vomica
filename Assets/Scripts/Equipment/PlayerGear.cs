@@ -180,14 +180,23 @@ public class PlayerGear : MonoBehaviour
     /// <summary>Взять предмет с земли сразу в руки.</summary>
     public void Pickup(EquipmentPickup pickup)
     {
-        if (pickup == null || !pickup.IsReady || equipment == null) return;
+        if (pickup == null || !pickup.IsReady || equipment == null)
+        {
+            Debug.LogWarning($"[Gear] Pickup отклонён: pickup={(pickup != null ? pickup.name : "NULL")} IsReady={(pickup != null ? pickup.IsReady.ToString() : "N/A")} equipment={(equipment != null ? "OK" : "NULL")}");
+            return;
+        }
 
         EquipmentItem item = pickup.Item;
+        var beforeR = equipment.GetEquipped(EquipmentSlot.RightHand);
+        var beforeL = equipment.GetEquipped(EquipmentSlot.LeftHand);
+        Debug.Log($"[Gear] Pickup попытка: '{item?.displayName ?? "NULL"}' id={item?.itemId} IsTwoHanded={(item != null && item.IsTwoHanded)} IsOffHand={(item != null && item.IsOffHand)} | до: R='{beforeR?.displayName ?? "пусто"}' L='{beforeL?.displayName ?? "пусто"}' | Carried: {DumpCarried()}");
 
         equipment.Equip(item);
         pickup.Consume();
 
-        Debug.Log($"[Gear] Взял: {Describe(item)}");
+        var afterR = equipment.GetEquipped(EquipmentSlot.RightHand);
+        var afterL = equipment.GetEquipped(EquipmentSlot.LeftHand);
+        Debug.Log($"[Gear] Взял: {Describe(item)} | после: R='{afterR?.displayName ?? "пусто"}' L='{afterL?.displayName ?? "пусто"}' | Carried: {DumpCarried()} (сохранение в LateUpdate)");
     }
 
     /// <summary>Выбросить предмет из слота на землю.</summary>
@@ -240,20 +249,27 @@ public class PlayerGear : MonoBehaviour
 
     private void HandleEquipped(EquipmentSlot slot, EquipmentItem item)
     {
+        Debug.Log($"[Gear] HandleEquipped slot={slot} item='{item.displayName}' id={item.itemId} | Carried до: {DumpCarried()}");
         Carried[slot] = item.itemId;
+        Debug.Log($"[Gear] Carried после HandleEquipped: {DumpCarried()}");
         ApplySlot(slot, item);
         AfterGearChanged();
     }
 
     private void HandleUnequipped(EquipmentSlot slot)
     {
+        EquipmentItem prev = null;
+        if (Carried.TryGetValue(slot, out string prevId)) prev = Resolve(prevId);
+        Debug.Log($"[Gear] HandleUnequipped slot={slot} prev='{prev?.displayName ?? prevId ?? "null"}' | Carried до: {DumpCarried()}");
         Carried.Remove(slot);
+        Debug.Log($"[Gear] Carried после remove: {DumpCarried()}");
         ApplySlot(slot, null);
         AfterGearChanged();
     }
 
     private void HandleDisplaced(EquipmentItem item)
     {
+        Debug.Log($"[Gear] HandleDisplaced item='{item.displayName}' id={item.itemId} applyingLoadout={applyingLoadout}");
         // При выдаче стартового набора вытеснять нечего, так что бросать тоже нечего
         if (applyingLoadout) return;
 
@@ -355,10 +371,18 @@ public class PlayerGear : MonoBehaviour
 
     private void ApplyCarried()
     {
+        Debug.Log($"[Gear] ApplyCarried start | scene={UnityEngine.SceneManagement.SceneManager.GetActiveScene().name} | carriedLoaded={carriedLoaded} file={SavePath} | Carried до Load: {DumpCarried()}");
+
         if (!carriedLoaded)
         {
             carriedLoaded = true;
-            if (!Load()) TakeStartingGear();
+            bool loaded = Load();
+            Debug.Log($"[Gear] Load() => {loaded} | Carried после Load: {DumpCarried()} | exists={File.Exists(SavePath)}");
+            if (!loaded)
+            {
+                TakeStartingGear();
+                Debug.Log($"[Gear] TakeStartingGear | Carried: {DumpCarried()} | startingGear count={startingGear.Count}");
+            }
         }
 
         applyingLoadout = true;
@@ -368,15 +392,17 @@ public class PlayerGear : MonoBehaviour
             if (!Carried.TryGetValue(slot, out string itemId)) continue;
 
             EquipmentItem item = Resolve(itemId);
+            Debug.Log($"[Gear] ApplyCarried slot={slot} id='{itemId}' resolve={(item != null ? item.displayName : "NULL")} HandsFull={HandsFull}");
             if (item == null) continue;
 
             // Защита от правленого руками сохранения: щит и двуручное вместе не живут
             if (slot == EquipmentSlot.LeftHand && HandsFull)
             {
-                Debug.LogWarning($"[Gear] '{item.displayName}' не взят: в руках двуручное оружие", this);
+                Debug.LogWarning($"[Gear] '{item.displayName}' не взят: в руках двуручное оружие (HandsFull)", this);
                 continue;
             }
 
+            Debug.Log($"[Gear] Equip {slot} -> '{item.displayName}' ({item.itemId})");
             equipment.Equip(item, slot == EquipmentSlot.LeftHand ? PreferredHand.Left : (PreferredHand?)null);
         }
 
@@ -389,10 +415,21 @@ public class PlayerGear : MonoBehaviour
             if (worn != null) Carried[slot] = worn.itemId;
         }
 
+        Debug.Log($"[Gear] ApplyCarried done | Carried после синхронизации: {DumpCarried()}");
+
         applyingLoadout = false;
 
         RefreshStatus();
         OnGearChanged?.Invoke();
+        Debug.Log($"[Gear] ApplyCarried finished | savePath={SavePath} | json={(File.Exists(SavePath) ? File.ReadAllText(SavePath) : "<no file>")}");
+    }
+
+    private static string DumpCarried()
+    {
+        if (Carried.Count == 0) return "<пусто>";
+        var parts = new System.Collections.Generic.List<string>();
+        foreach (var kv in Carried) parts.Add($"{kv.Key}='{kv.Value}'");
+        return string.Join(", ", parts);
     }
 
     private void TakeStartingGear()
@@ -424,9 +461,12 @@ public class PlayerGear : MonoBehaviour
         foreach (var pair in Carried)
             data.slots.Add(new GearSlotData { slot = pair.Key, itemId = pair.Value });
 
+        string json = JsonUtility.ToJson(data, true);
+        string prev = File.Exists(SavePath) ? File.ReadAllText(SavePath) : "<no file>";
         try
         {
-            File.WriteAllText(SavePath, JsonUtility.ToJson(data, true));
+            File.WriteAllText(SavePath, json);
+            Debug.Log($"[Gear] Save OK | {SavePath}\nCarried: {DumpCarried()}\nprev: {prev}\nnow: {json}");
         }
         catch (Exception e)
         {

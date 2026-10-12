@@ -344,7 +344,7 @@ MonoBehaviour:
       Owner: {fileID: 145987683}
       Enabled: 1
       Input:
-        InputAction: {fileID: -5630151704836100654, guid: 1d6e640e716dc4ff6989b73d02023f2b, type: 3}
+        InputAction: {fileID: 0, guid: 00000000000000000000000000000000, type: 0}
         Gain: 1
         LegacyInput: 
         LegacyGain: 1
@@ -357,7 +357,7 @@ MonoBehaviour:
       Owner: {fileID: 145987683}
       Enabled: 1
       Input:
-        InputAction: {fileID: -5630151704836100654, guid: 1d6e640e716dc4ff6989b73d02023f2b, type: 3}
+        InputAction: {fileID: 0, guid: 00000000000000000000000000000000, type: 0}
         Gain: -1
         LegacyInput: 
         LegacyGain: 1
@@ -422,7 +422,7 @@ MonoBehaviour:
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
-    TrackingTarget: {fileID: 0}
+    TrackingTarget: {fileID: 483721268}
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
@@ -729,7 +729,7 @@ MonoBehaviour:
   _groundMask:
     serializedVersion: 2
     m_Bits: 8
-  _animatorController: {fileID: 9100000, guid: 39242eaf842a9524f8f80b5d797793c9, type: 2}
+  _animatorController: {fileID: 9100000, guid: 807883fd4ead9d644ae78510396bb97b, type: 2}
   _animator: {fileID: 0}
   _speedParam: Speed
   _jumpTrigger: Jump
@@ -809,7 +809,7 @@ MonoBehaviour:
   _playerHealth: {fileID: 483721272}
   _stamina: {fileID: 0}
   inputHandler: {fileID: 483721274}
-  _animatorController: {fileID: 9100000, guid: 39242eaf842a9524f8f80b5d797793c9, type: 2}
+  _animatorController: {fileID: 9100000, guid: 807883fd4ead9d644ae78510396bb97b, type: 2}
   _animator: {fileID: 0}
   _attackTrigger: Attack
   _syncDamageToWindup: 1

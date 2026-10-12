@@ -255,19 +255,43 @@ namespace CharacterEquipment
 
             var point = GetPoint(pointId, item);
 
-            // Двуручное занимает обе кисти — освобождаем вторую.
-            // И наоборот: если во второй руке двуручное, а мы берём что-то в эту — оно снимается.
+            // Логируем попытку надевания для трассы CharEquip → Arena
+            var curRight = GetEquipped(EquipmentSlot.RightHand);
+            var curLeft = GetEquipped(EquipmentSlot.LeftHand);
+            Debug.Log($"[Equip] EquipHand req='{item.displayName}' id={item.itemId} IsTwoHanded={item.IsTwoHanded} IsOffHand={item.IsOffHand} hand={hand} slot={slot} other={otherSlot} | before Right='{curRight?.displayName ?? "пусто"}' Left='{curLeft?.displayName ?? "пусто"}' IsTwoHanded R={curRight != null && curRight.IsTwoHanded} L={curLeft != null && curLeft.IsTwoHanded}");
+
+            // Логика замены:
+            // - двуручное на земле вытесняет ОБА одноручных (меч+баклер → копьё)
+            // - одноручное/щит при занятых двух руках вытесняет двуручное
             if (item.IsTwoHanded)
             {
-                Displace(otherSlot);
+                // Двуручное требует обе кисти свободны
+                EquipmentItem otherItem = GetEquipped(otherSlot);
+                if (otherItem != null)
+                {
+                    Debug.Log($"[Equip] Двуручное '{item.displayName}' вытесняет из {otherSlot}: '{otherItem.displayName}'");
+                    Displace(otherSlot);
+                }
+                // слот очистится ниже
             }
-            else if (equipped.TryGetValue(otherSlot, out var otherItem) && otherItem.IsTwoHanded)
+            else
             {
-                Displace(otherSlot);
+                // Берём что-то в одну руку — если во второй лежит двуручное, оно уходит
+                EquipmentItem otherItem = GetEquipped(otherSlot);
+                if (otherItem != null && otherItem.IsTwoHanded)
+                {
+                    Debug.Log($"[Equip] Одноручное/щит '{item.displayName}' в {slot} вытесняет двуручное из {otherSlot}: '{otherItem.displayName}'");
+                    Displace(otherSlot);
+                }
             }
 
+            EquipmentItem existing = GetEquipped(slot);
+            if (existing != null)
+                Debug.Log($"[Equip] Освобождаю целевой слот {slot}: '{existing.displayName}' -> '{item.displayName}'");
             Displace(slot);
             Register(slot, item, Spawn(item.modelPrefab, point, mirror: false));
+
+            Debug.Log($"[Equip] Надето '{item.displayName}' в {slot}. После: Right='{GetEquipped(EquipmentSlot.RightHand)?.displayName ?? "пусто"}' Left='{GetEquipped(EquipmentSlot.LeftHand)?.displayName ?? "пусто"}'");
 
             OnItemEquipped?.Invoke(slot, item);
             OnHandsChanged?.Invoke();

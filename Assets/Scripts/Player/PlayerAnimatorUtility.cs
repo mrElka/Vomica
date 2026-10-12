@@ -34,10 +34,24 @@ public static class PlayerAnimatorUtility
                 onRoot.enabled = false;
             }
 
+            // Не перетираем контроллер с позами (Character_controller) простым Player.controller,
+            // иначе CharacterPoseController теряет слои RightHand/LeftHand/TwoHand
             if (preferredController != null &&
-                withAvatar.runtimeAnimatorController != preferredController)
+                withAvatar.runtimeAnimatorController == null)
             {
                 withAvatar.runtimeAnimatorController = preferredController;
+            }
+            else if (preferredController != null &&
+                     withAvatar.runtimeAnimatorController != null &&
+                     withAvatar.runtimeAnimatorController != preferredController)
+            {
+                // Если на аватаре уже стоит контроллер с позами — оставляем его
+                string curName = withAvatar.runtimeAnimatorController.name;
+                bool hasPose = curName.Contains("Character_controller");
+                if (!hasPose)
+                    withAvatar.runtimeAnimatorController = preferredController;
+                else
+                    Debug.Log($"[PlayerAnimatorUtility] Сохраняю контроллер '{curName}' на '{withAvatar.name}', не перетираю на '{preferredController.name}'");
             }
 
             return withAvatar;

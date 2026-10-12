@@ -40,21 +40,37 @@ namespace CharacterEquipment
             equipment = GetComponent<CharacterEquipment>();
             if (animator == null) animator = GetComponentInChildren<Animator>();
 
+            if (animator == null)
+            {
+                Debug.LogWarning("[Pose] Animator не найден на персонаже, позы не будут переключаться", this);
+                return;
+            }
+
             rightLayer = animator.GetLayerIndex(rightLayerName);
             leftLayer = animator.GetLayerIndex(leftLayerName);
             twoHandLayer = animator.GetLayerIndex(twoHandLayerName);
+
+            Debug.Log($"[Pose] Awake animator='{animator.name}' controller='{animator.runtimeAnimatorController?.name ?? "NULL"}' layers: Right={rightLayer} Left={leftLayer} TwoHand={twoHandLayer} | hashes R={RightPoseHash} L={LeftPoseHash} T={TwoHandPoseHash}");
+            if (rightLayer < 0) Debug.LogWarning($"[Pose] Слой '{rightLayerName}' не найден в контроллере", this);
+            if (leftLayer < 0) Debug.LogWarning($"[Pose] Слой '{leftLayerName}' не найден", this);
+            if (twoHandLayer < 0) Debug.LogWarning($"[Pose] Слой '{twoHandLayerName}' не найден", this);
         }
 
         private void OnEnable()
         {
-            equipment.OnHandsChanged += Refresh;
+            if (equipment != null) equipment.OnHandsChanged += Refresh;
             Refresh();
         }
 
-        private void OnDisable() => equipment.OnHandsChanged -= Refresh;
+        private void OnDisable()
+        {
+            if (equipment != null) equipment.OnHandsChanged -= Refresh;
+        }
 
         private void Refresh()
         {
+            if (animator == null || equipment == null) return;
+
             var right = equipment.GetEquipped(EquipmentSlot.RightHand);
             var left = equipment.GetEquipped(EquipmentSlot.LeftHand);
 
@@ -65,21 +81,41 @@ namespace CharacterEquipment
 
             if (twoHanded != null)
             {
-                animator.SetInteger(TwoHandPoseHash, (int)twoHanded.holdPose);
-                animator.SetInteger(RightPoseHash, 0);
-                animator.SetInteger(LeftPoseHash, 0);
+                SafeSetInt(TwoHandPoseHash, (int)twoHanded.holdPose);
+                SafeSetInt(RightPoseHash, 0);
+                SafeSetInt(LeftPoseHash, 0);
                 rightTarget = leftTarget = 0f;
                 twoHandTarget = 1f;
+                Debug.Log($"[Pose] TwoHanded '{twoHanded.displayName}' pose={twoHanded.holdPose} ({(int)twoHanded.holdPose}) -> TwoHandLayer=1, Right/Left=0");
             }
             else
             {
-                animator.SetInteger(TwoHandPoseHash, 0);
-                animator.SetInteger(RightPoseHash, right != null ? (int)right.holdPose : 0);
-                animator.SetInteger(LeftPoseHash, left != null ? (int)left.holdPose : 0);
+                SafeSetInt(TwoHandPoseHash, 0);
+                int rp = right != null ? (int)right.holdPose : 0;
+                int lp = left != null ? (int)left.holdPose : 0;
+                SafeSetInt(RightPoseHash, rp);
+                SafeSetInt(LeftPoseHash, lp);
                 rightTarget = right != null ? 1f : 0f;
                 leftTarget = left != null ? 1f : 0f;
                 twoHandTarget = 0f;
+                Debug.Log($"[Pose] Right='{right?.displayName ?? "пусто"}' pose={right?.holdPose ?? HoldPose.None} ({rp}) | Left='{left?.displayName ?? "пусто"}' pose={left?.holdPose ?? HoldPose.None} ({lp}) -> weights R={rightTarget} L={leftTarget} T={twoHandTarget}");
             }
+        }
+
+        private void SafeSetInt(int hash, int value)
+        {
+            if (animator == null) return;
+            // Animator.StringToHash не бросает если параметра нет, но SetInteger молча игнорирует — логируем что параметр существует
+            // Проверяем через parameters массив для диагностики
+            bool found = false;
+            foreach (var p in animator.parameters)
+                if (p.nameHash == hash) { found = true; break; }
+            if (!found)
+            {
+                Debug.LogWarning($"[Pose] Параметр hash={hash} не найден в контроллере '{animator.runtimeAnimatorController?.name}'", this);
+                return;
+            }
+            animator.SetInteger(hash, value);
         }
 
         private void Update()
