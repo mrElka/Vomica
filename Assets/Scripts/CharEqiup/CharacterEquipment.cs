@@ -323,12 +323,7 @@ namespace CharacterEquipment
 
             // Кости рига приходят со своим масштабом — гасим его,
             // иначе предмет в руке раздувается или сплющивается
-            Vector3 bone = point.transform.lossyScale;
             Vector3 scale = prefab.transform.localScale;
-            scale = new Vector3(
-                bone.x != 0f ? scale.x / bone.x : scale.x,
-                bone.y != 0f ? scale.y / bone.y : scale.y,
-                bone.z != 0f ? scale.z / bone.z : scale.z);
 
             if (mirror) scale.x = -scale.x;
 
