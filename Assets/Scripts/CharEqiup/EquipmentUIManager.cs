@@ -39,6 +39,11 @@ namespace CharacterEquipment
         [SerializeField] private EquipmentDetailsPanel detailsPanel;
 
         private readonly List<EquipmentSlotButton> spawnedButtons = new List<EquipmentSlotButton>();
+        private void Awake()
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
 
         private void Start()
         {

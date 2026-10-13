@@ -18,7 +18,7 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: 4ea51d6239421b54995c9bbb0c1fd33d, type: 3}
   category: 0
   weaponSubCategory: 0
-  modelPrefab: {fileID: 7489349845076321189, guid: a836524ed7b98c94f901b1ba1380bd58, type: 3}
+  modelPrefab: {fileID: 3145123412769338268, guid: 295f2bbc1e6a38b43884396f5ba7a135, type: 3}
   modelPrefabLeft: {fileID: 0}
   holdPose: 0
   weaponClass: 0

@@ -207,7 +207,7 @@ Transform:
   m_GameObject: {fileID: 67093832}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.247, y: 1.8460001, z: 0.35355}
+  m_LocalPosition: {x: 0.247, y: 1.704, z: 0.35355}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -344,7 +344,7 @@ MonoBehaviour:
       Owner: {fileID: 145987683}
       Enabled: 1
       Input:
-        InputAction: {fileID: 0, guid: 00000000000000000000000000000000, type: 0}
+        InputAction: {fileID: 0}
         Gain: 1
         LegacyInput: 
         LegacyGain: 1
@@ -357,7 +357,7 @@ MonoBehaviour:
       Owner: {fileID: 145987683}
       Enabled: 1
       Input:
-        InputAction: {fileID: 0, guid: 00000000000000000000000000000000, type: 0}
+        InputAction: {fileID: 0}
         Gain: -1
         LegacyInput: 
         LegacyGain: 1
@@ -905,8 +905,8 @@ MonoBehaviour:
     handScale: {x: 1, y: 1, z: 1}
   selectedItem: -1
   selectWithNumberKeys: 0
-  showModel: 0
   modelAttachPoint: {fileID: 0}
+  showModel: 0
   inputHandler: {fileID: 483721274}
   armor: {fileID: 0}
   logWeaponChange: 1
@@ -953,6 +953,39 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterEquipment.CharacterEquipment
   attachmentPoints: []
+  boneBindings:
+  - id: 7
+    boneName: Hand.R
+    localPosition: {x: 0, y: -0.0025, z: 0.005}
+    localEuler: {x: 120, y: 0, z: 0}
+  - id: 6
+    boneName: Hand.L
+    localPosition: {x: 0, y: -0.0025, z: 0.005}
+    localEuler: {x: 120, y: 0, z: 0}
+  - id: 0
+    boneName: Head
+    localPosition: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+  - id: 1
+    boneName: Spine
+    localPosition: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+  - id: 2
+    boneName: LowerArm.L
+    localPosition: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+  - id: 3
+    boneName: LowerArm.R
+    localPosition: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+  - id: 4
+    boneName: LowerLeg.L
+    localPosition: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+  - id: 5
+    boneName: LowerLeg.R
+    localPosition: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
 --- !u!114 &483721278
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1404,7 +1437,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2117616843}
   m_Enabled: 1
-  serializedVersion: 12
+  serializedVersion: 13
   m_Type: 1
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
   m_Intensity: 1
@@ -1456,7 +1489,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShadowRadius: 0
+  m_ShapeRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1

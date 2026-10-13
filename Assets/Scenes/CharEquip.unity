@@ -3598,6 +3598,39 @@ MonoBehaviour:
   - {fileID: 1719425278}
   - {fileID: 1545999858}
   - {fileID: 1373974800}
+  boneBindings:
+  - id: 7
+    boneName: Hand.R
+    localPosition: {x: 0, y: -0.0025, z: 0.005}
+    localEuler: {x: 120, y: 0, z: 0}
+  - id: 6
+    boneName: Hand.L
+    localPosition: {x: 0, y: -0.0025, z: 0.005}
+    localEuler: {x: 120, y: 0, z: 0}
+  - id: 0
+    boneName: Head
+    localPosition: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+  - id: 1
+    boneName: Spine
+    localPosition: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+  - id: 2
+    boneName: LowerArm.L
+    localPosition: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+  - id: 3
+    boneName: LowerArm.R
+    localPosition: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+  - id: 4
+    boneName: LowerLeg.L
+    localPosition: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+  - id: 5
+    boneName: LowerLeg.R
+    localPosition: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
 --- !u!4 &1283172115
 Transform:
   m_ObjectHideFlags: 0

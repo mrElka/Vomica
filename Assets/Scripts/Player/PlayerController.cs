@@ -106,6 +106,8 @@ public class PlayerController : MonoBehaviour
 
         HidePlaceholderCapsuleMesh();
 
+
+
         if (_lockCursorOnStart)
         {
             Cursor.lockState = CursorLockMode.Locked;
