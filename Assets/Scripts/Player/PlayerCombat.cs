@@ -2,13 +2,30 @@
 using Unity.Cinemachine;
 using UnityEngine;
 
+// Боевая система игрока.
+//
+// Что делает:
+// 1. Обрабатывает атаку по нажатию (ЛКМ/ПКМ через InputHandler).
+// 2. Считает урон: берёт DamagePacket из PlayerWeapons (по классу оружия) или fallback-значение.
+// 3. Ищет цели через OverlapSphere и наносит урон (одна цель за взмах или все сразу).
+// 4. Запускает анимацию удара и синхронизирует момент урона с фазой замаха.
+// 5. Рисует отладочный оверлей справа сверху: статус атаки, стамина, оружие, броня.
+//
+// Зависимости:
+// - PlayerWeapons — источник урона, дальности, кулдауна и стоимости стамины.
+// - PlayerStamina — списание выносливости за удар.
+// - PlayerHealth / PlayerArmor — для отладочного вывода.
+// - InputHandler — нажатие атаки.
+// - CinemachineCamera — направление удара считается вдоль активной камеры.
 public class PlayerCombat : MonoBehaviour
 {
+
     [Header("Combat (fallback, если нет оружия)")]
     [SerializeField] private int _damage = 20;
     [SerializeField] private float _attackRange = 2f;
     [SerializeField] private float _attackDistance = 1.5f;
     [SerializeField] private float _attackCooldown = 0.45f;
+
 
     [Header("Balance v0.1")]
     [Tooltip("Арсенал игрока. Если оружие выбрано, показатели берутся из его класса")]
@@ -23,12 +40,14 @@ public class PlayerCombat : MonoBehaviour
     [Tooltip("Один взмах поражает одну цель")]
     [SerializeField] private bool _singleTargetPerSwing = true;
 
+
     [Header("Links")]
     [SerializeField] private CinemachineCamera _cam;
     [SerializeField] private PlayerController _playerController;
     [SerializeField] private PlayerHealth _playerHealth;
     [SerializeField] private PlayerStamina _stamina;
     [SerializeField] private InputHandler inputHandler;
+
 
     [Header("Animation")]
     [SerializeField] private RuntimeAnimatorController _animatorController;
@@ -38,25 +57,22 @@ public class PlayerCombat : MonoBehaviour
     [Tooltip("Урон в момент замаха из таблицы оружия, а не в кадр нажатия")]
     [SerializeField] private bool _syncDamageToWindup = true;
 
+
     [Header("Debug")]
     [SerializeField] private bool _debugShowCanAttack = true;
+
 
     private float _nextAttackTime;
     private Coroutine _attackRoutine;
 
-    /// <summary>Камера, вдоль которой направлен удар. Переключается CameraSwitcher.</summary>
     public CinemachineCamera ActiveCamera
     {
         get => _cam;
         set => _cam = value;
     }
 
-    /// <summary>true — выбран класс оружия, значит показатели идут из таблицы баланса.</summary>
     private bool HasClassWeapon => _weapons != null && _weapons.HasWeapon;
 
-    // ==== Актуальные параметры: класс оружия, затем WeaponData, затем поля выше ====
-
-    /// <summary>Урон одного попадания с разбивкой по типам.</summary>
     public DamagePacket CurrentDamage => HasClassWeapon
         ? _weapons.Damage
         : DamagePacket.Of(_fallbackDamageType, Damage);
@@ -87,12 +103,14 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
+
     public float AttackRange
     {
         get => _stamina != null && _stamina.CurrentWeapon != null
             ? _stamina.CurrentWeapon.AttackRange
             : _attackRange;
     }
+
 
     public float AttackDistance
     {
@@ -101,15 +119,13 @@ public class PlayerCombat : MonoBehaviour
             : _attackDistance;
     }
 
-    /// <summary>Максимальная дальность удара от центра персонажа, м.</summary>
     public float Reach => HasClassWeapon ? _weapons.Range : AttackDistance + AttackRange;
 
-    /// <summary>Радиус сферы попадания.</summary>
+
     public float HitRadius => HasClassWeapon
         ? Mathf.Min(_classHitRadius, _weapons.Range * 0.5f)
         : AttackRange;
 
-    /// <summary>Расход выносливости за один удар.</summary>
     public float StaminaCost
     {
         get
@@ -130,6 +146,8 @@ public class PlayerCombat : MonoBehaviour
             return true;
         }
     }
+
+ 
 
     private void Awake()
     {
@@ -185,6 +203,7 @@ public class PlayerCombat : MonoBehaviour
         _attackRoutine = null;
     }
 
+
     public void DealDamage()
     {
         float radius = HitRadius;
@@ -221,6 +240,7 @@ public class PlayerCombat : MonoBehaviour
             nearest.TakeDamage(packet);
     }
 
+
     private Vector3 GetAttackDirection()
     {
         if (_cam != null)
@@ -233,7 +253,6 @@ public class PlayerCombat : MonoBehaviour
         return transform.forward;
     }
 
-    // ================= DEBUG =================
 
     private void OnGUI()
     {
@@ -252,63 +271,69 @@ public class PlayerCombat : MonoBehaviour
         float x = Screen.width - blockWidth - rightPadding;
         float y = 15f;
 
+        y = DrawAttackLine(x, y, blockWidth, lineHeight, style);
+        y = DrawStaminaLine(x, y, blockWidth, lineHeight, style);
+        y = DrawWeaponLine(x, y, blockWidth, lineHeight, style);
+        DrawArmorLine(x, y, blockWidth, lineHeight, style);
+    }
+
+    private float DrawAttackLine(float x, float y, float w, float h, GUIStyle style)
+    {
         string state = CanAttack ? "<color=lime>READY</color>" : "<color=red>BLOCKED</color>";
         string reason = "";
+
         if (_playerHealth != null && _playerHealth.IsDead) reason = "dead";
         else if (_playerController != null && _playerController.IsDashing) reason = "dashing";
         else if (Time.time < _nextAttackTime) reason = $"cooldown {(_nextAttackTime - Time.time):F2}s";
         else if (_stamina != null && !_stamina.CanSpend(StaminaCost))
             reason = $"stamina {_stamina.CurrentStamina:F0}/{StaminaCost:F0}";
 
-        GUI.Label(new Rect(x, y, blockWidth, lineHeight),
+        GUI.Label(new Rect(x, y, w, h),
             $"ATTACK: {state}   <color=orange>[{reason}]</color>", style);
-        y += lineHeight;
 
-        if (_stamina != null)
-        {
-            string weaponName = HasClassWeapon
-                ? _weapons.SelectedName
-                : (_stamina.CurrentWeapon != null ? _stamina.CurrentWeapon.DisplayName : "none");
+        return y + h;
+    }
 
-            GUI.Label(new Rect(x, y, blockWidth, lineHeight),
-                $"STAMINA: {_stamina.CurrentStamina:F0}/{_stamina.MaxStamina:F0}  " +
-                $"(atk {StaminaCost:F0}, dash {_stamina.DashCost:F0}, run {_stamina.RunCostPerSecond:F0}/s)  " +
-                $"WEAPON: <color=yellow>{weaponName}</color>",
-                style);
-            y += lineHeight;
-        }
+    private float DrawStaminaLine(float x, float y, float w, float h, GUIStyle style)
+    {
+        if (_stamina == null) return y;
 
-        if (HasClassWeapon)
-        {
-            GUI.Label(new Rect(x, y, blockWidth, lineHeight),
-                $"<color=yellow>{_weapons.GetStatsSummary()}</color>", style);
-            y += lineHeight;
-        }
+        string weaponName = HasClassWeapon
+            ? _weapons.SelectedName
+            : (_stamina.CurrentWeapon != null ? _stamina.CurrentWeapon.DisplayName : "none");
 
-        if (_playerHealth != null && _playerHealth.Armor != null)
-        {
-            var a = _playerHealth.Armor;
+        GUI.Label(new Rect(x, y, w, h),
+            $"STAMINA: {_stamina.CurrentStamina:F0}/{_stamina.MaxStamina:F0}  " +
+            $"(atk {StaminaCost:F0}, dash {_stamina.DashCost:F0}, run {_stamina.RunCostPerSecond:F0}/s)  " +
+            $"WEAPON: <color=yellow>{weaponName}</color>",
+            style);
 
-            if (a.UsesBalanceModel)
-            {
-                GUI.Label(new Rect(x, y, blockWidth, lineHeight),
-                    $"ARMOR: body A={a.Body.ArmorA:F0} {a.Body.Profile} | " +
-                    $"helmet A={a.Helmet.ArmorA:F0} {a.Helmet.Profile} | " +
-                    $"move <color=cyan>-{a.MovementPenalty01 * 100f:F0}%</color> " +
-                    $"atk <color=cyan>-{a.AttackSpeedPenalty01 * 100f:F0}%</color>",
-                    style);
-            }
-            else
-            {
-                GUI.Label(new Rect(x, y, blockWidth, lineHeight),
-                    $"ARMOR: body {a.Body.DamageReductionPercent:F0}% " +
-                    $"{(a.Body.IsEquipped ? "" : "<color=gray>(off)</color>")} | " +
-                    $"helmet {a.Helmet.DamageReductionPercent:F0}% " +
-                    $"{(a.Helmet.IsEquipped ? "" : "<color=gray>(off)</color>")} | " +
-                    $"total <color=cyan>-{a.TotalReduction * 100f:F0}%</color>",
-                    style);
-            }
-        }
+        return y + h;
+    }
+
+
+    private float DrawWeaponLine(float x, float y, float w, float h, GUIStyle style)
+    {
+        if (!HasClassWeapon) return y;
+
+        GUI.Label(new Rect(x, y, w, h),
+            $"<color=yellow>{_weapons.GetStatsSummary()}</color>", style);
+
+        return y + h;
+    }
+
+    private void DrawArmorLine(float x, float y, float w, float h, GUIStyle style)
+    {
+        if (_playerHealth == null || _playerHealth.Armor == null) return;
+
+        var a = _playerHealth.Armor;
+
+        GUI.Label(new Rect(x, y, w, h),
+            $"ARMOR: body A={a.Body.ArmorA:F0} {a.Body.Profile} | " +
+            $"helmet A={a.Helmet.ArmorA:F0} {a.Helmet.Profile} | " +
+            $"move <color=cyan>-{a.MovementPenalty01 * 100f:F0}%</color> " +
+            $"atk <color=cyan>-{a.AttackSpeedPenalty01 * 100f:F0}%</color>",
+            style);
     }
 
     private void OnDrawGizmosSelected()

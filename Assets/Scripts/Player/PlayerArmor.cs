@@ -1,14 +1,22 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+
+// СЛОТ БРОНИ
+
+// Один слот защиты: тело или шлем.
+// Работает только по модели баланса v0.1:
+// - Защита A (число из таблицы набора брони).
+// - Профиль материала (Quilted / Mail / Plate и т.д.) — меняет эффективность против разных типов урона.
+// - Штрафы движения и частоты атак.
+// Значения приходят из VomicaBalance.ArmorPresets или назначаются в рантайме из инвентаря.
 [System.Serializable]
 public class ArmorSlot
 {
     [SerializeField] private string _name = "Slot";
-    [SerializeField, Range(0f, 100f)] private float _damageReductionPercent = 0f;
     [SerializeField] private bool _isEquipped = true;
 
     [Header("Balance v0.1")]
-    [Tooltip("Базовая защита A из таблицы набора брони. 0 — работает старая модель в процентах")]
+    [Tooltip("Базовая защита A из таблицы набора брони")]
     [SerializeField] private float _armorA = 0f;
 
     [Tooltip("Профиль материала: меняет защиту A против рубящего, колющего и дробящего")]
@@ -20,10 +28,10 @@ public class ArmorSlot
     [Tooltip("Штраф частоты атак за этот предмет, доля")]
     [SerializeField, Range(0f, 0.5f)] private float _attackPenalty = 0f;
 
+
     public string Name => _name;
     public bool IsEquipped => _isEquipped;
 
-    /// <summary>Базовая защита A. Если слот не надет — 0.</summary>
     public float ArmorA
     {
         get => _isEquipped ? Mathf.Max(0f, _armorA) : 0f;
@@ -38,9 +46,10 @@ public class ArmorSlot
 
     public float MovementPenalty => _isEquipped ? _movementPenalty : 0f;
 
+
     public float AttackPenalty => _isEquipped ? _attackPenalty : 0f;
 
-    /// <summary>Взять значения из таблицы набора брони (раздел 5 документа).</summary>
+
     public void ApplyPreset(ArmorItemPreset preset)
     {
         _name = preset.DisplayName;
@@ -48,10 +57,12 @@ public class ArmorSlot
         _profile = preset.Profile;
         _movementPenalty = preset.MovementPenalty;
         _attackPenalty = preset.AttackPenalty;
+        _isEquipped = true;
     }
 
-    /// <summary>Надеть предмет из инвентаря с параметрами из документа баланса.</summary>
-    public void Wear(string name, float armorA, ArmorProfile profile, float movementPenalty, float attackPenalty)
+
+    public void Wear(string name, float armorA, ArmorProfile profile,
+                     float movementPenalty, float attackPenalty)
     {
         _name = name;
         _armorA = Mathf.Max(0f, armorA);
@@ -61,7 +72,7 @@ public class ArmorSlot
         _isEquipped = true;
     }
 
-    /// <summary>Снять предмет: слот перестаёт защищать и штрафовать.</summary>
+
     public void TakeOff()
     {
         _armorA = 0f;
@@ -71,86 +82,58 @@ public class ArmorSlot
         _isEquipped = false;
     }
 
-    /// <summary>Снижение урона в процентах (0..100). Если слот не надет — 0.</summary>
-    public float DamageReductionPercent
-    {
-        get => _isEquipped ? _damageReductionPercent : 0f;
-        set => _damageReductionPercent = Mathf.Clamp(value, 0f, 100f);
-    }
-
-    /// <summary>Снижение урона как доля (0..1).</summary>
-    public float Reduction01 => DamageReductionPercent / 100f;
 
     public void SetEquipped(bool value) => _isEquipped = value;
 }
 
+//  БРОНЯ ИГРОКА
+
+// Управляет двумя слотами защиты игрока (тело и шлем) и считает урон по модели баланса v0.1.
+//
+// Что делает:
+// 1. Хранит два слота: тело и шлем, каждый со своей защитой A и профилем материала.
+// 2. Считает потерянное HP от попадания по конкретной зоне (голова — шлем, остальное — тело).
+// 3. Отдаёт штрафы движения и частоты атак — их читают PlayerController и PlayerWeapons.
+// 4. Создаёт и обновляет две полоски UI (тело и шлем).
+//
+// Формула урона (VomicaBalance.ComputeHpLoss):
+// эффективная защита = A × коэффициент профиля против типа урона.
+// Далее — по формуле в духе Valheim: при низкой защите она вычитается из урона,
+// при высокой — работает вторая ветвь.
 public class PlayerArmor : MonoBehaviour
 {
+
     [Header("Body Armor (броня)")]
     [SerializeField] private ArmorSlot _body = new ArmorSlot();
 
     [Header("Helmet (шлем)")]
     [SerializeField] private ArmorSlot _helmet = new ArmorSlot();
 
-    [Header("Settings")]
-    [Tooltip("Вкл — мультипликативно: (1-body)*(1-helmet). Выкл — аддитивно: body+helmet.")]
-    [SerializeField] private bool _multiplicative = true;
-
-    [Tooltip("Максимальное суммарное снижение урона (в %), чтобы нельзя было стать бессмертным")]
-    [SerializeField, Range(0f, 100f)] private float _maxTotalReductionPercent = 90f;
-
     [Header("UI")]
+    [Tooltip("Максимум шкалы для отображения A. По таблице баланса максимальная A ≈ 16")]
+    [SerializeField] private float _barMaxArmor = 20f;
+
     [SerializeField] private ArmorBar _bodyBar;
     [SerializeField] private ArmorBar _helmetBar;
+
 
     public ArmorSlot Body => _body;
     public ArmorSlot Helmet => _helmet;
 
-    public float BodyReduction => _body.Reduction01;
-    public float HelmetReduction => _helmet.Reduction01;
 
-    /// <summary>Итоговое снижение урона как доля (0..1).</summary>
-    public float TotalReduction
-    {
-        get
-        {
-            float r;
-            if (_multiplicative)
-                r = 1f - (1f - BodyReduction) * (1f - HelmetReduction);
-            else
-                r = BodyReduction + HelmetReduction;
-
-            return Mathf.Clamp(r, 0f, _maxTotalReductionPercent / 100f);
-        }
-    }
-
-    /// <summary>Применяет броню+шлем к входящему урону.</summary>
-    public int ApplyArmor(int incomingDamage)
-    {
-        if (incomingDamage <= 0) return 0;
-
-        float final = incomingDamage * (1f - TotalReduction);
-        return Mathf.Max(0, Mathf.RoundToInt(final));
-    }
-
-    // ==== Модель из документа: A + профиль материала, защита только поражённой зоны ====
-
-    /// <summary>Сумма штрафов движения от надетых предметов, доля.</summary>
     public float MovementPenalty01 => Mathf.Clamp01(_body.MovementPenalty + _helmet.MovementPenalty);
 
-    /// <summary>Сумма штрафов частоты атак от надетых предметов, доля.</summary>
+ 
     public float AttackSpeedPenalty01 => Mathf.Clamp01(_body.AttackPenalty + _helmet.AttackPenalty);
 
-    /// <summary>true — хотя бы у одного слота задана защита A, значит работает модель из документа.</summary>
-    public bool UsesBalanceModel => _body.ArmorA > 0f || _helmet.ArmorA > 0f;
-
-    /// <summary>Слот, который защищает указанную зону. Броня разных зон не складывается.</summary>
+    //РАСЧЁТ УРОНА 
+    // Возвращает слот, который защищает указанную зону.
+    // Голова — шлем, всё остальное — тело. Броня разных зон не складывается.
     public ArmorSlot GetSlot(BodyZone zone) => zone == BodyZone.Head ? _helmet : _body;
 
-    /// <summary>
-    /// Потеря HP от попадания с учётом типов урона. Если у задетой зоны задана защита A,
-    /// считается по формуле документа, иначе остаётся старая модель в процентах.
-    /// </summary>
+    // Потеря HP от попадания с учётом типов урона и зоны.
+    // Если у задетой зоны есть защита A — считаем по формуле документа.
+    // Если A = 0 — считаем, что брони нет, урон идёт напрямую.
     public float ApplyArmor(DamagePacket damage, BodyZone zone = BodyZone.Torso)
     {
         float total = damage.Total;
@@ -161,22 +144,38 @@ public class PlayerArmor : MonoBehaviour
         if (slot.ArmorA > 0f)
             return VomicaBalance.ComputeHpLoss(damage, slot.ArmorA, slot.Profile);
 
-        return total * (1f - TotalReduction);
+        return total;
     }
 
-    // ==== Рантайм-API ====
 
-    public void SetBodyReduction(float percent) => _body.DamageReductionPercent = percent;
-    public void SetHelmetReduction(float percent) => _helmet.DamageReductionPercent = percent;
+    public void SetBodyArmor(float armorA, ArmorProfile profile)
+    {
+        _body.ArmorA = armorA;
+        _body.Profile = profile;
+    }
+
+    public void SetHelmetArmor(float armorA, ArmorProfile profile)
+    {
+        _helmet.ArmorA = armorA;
+        _helmet.Profile = profile;
+    }
+
 
     public void EquipBody(bool equipped) => _body.SetEquipped(equipped);
     public void EquipHelmet(bool equipped) => _helmet.SetEquipped(equipped);
+
 
     private void Awake()
     {
         if (_bodyBar == null || _helmetBar == null)
             CreateBars();
     }
+
+    private void Update()
+    {
+        UpdateBars();
+    }
+
 
     private void CreateBars()
     {
@@ -191,8 +190,8 @@ public class PlayerArmor : MonoBehaviour
             "BodyArmorBar",
             new Vector2(24f, -76f),
             new Vector2(260f, 14f),
-            new Color(0.35f, 0.65f, 1f, 1f),   
-            new Color(0.15f, 0.30f, 0.50f, 1f), 
+            new Color(0.35f, 0.65f, 1f, 1f),
+            new Color(0.15f, 0.30f, 0.50f, 1f),
             "Броня"
         );
 
@@ -201,36 +200,23 @@ public class PlayerArmor : MonoBehaviour
             "HelmetArmorBar",
             new Vector2(24f, -98f),
             new Vector2(260f, 14f),
-            new Color(0.7f, 0.45f, 1f, 1f),   
+            new Color(0.7f, 0.45f, 1f, 1f),
             new Color(0.30f, 0.15f, 0.50f, 1f),
             "Шлем"
         );
 
-        _bodyBar.SetMaxValue(100f);
-        _helmetBar.SetMaxValue(100f);
-        _bodyBar.SetValue(_body.DamageReductionPercent);
-        _helmetBar.SetValue(_helmet.DamageReductionPercent);
+        _bodyBar.SetMaxValue(_barMaxArmor);
+        _helmetBar.SetMaxValue(_barMaxArmor);
+        _bodyBar.SetValue(_body.ArmorA);
+        _helmetBar.SetValue(_helmet.ArmorA);
     }
 
-    private void Update()
+    private void UpdateBars()
     {
         if (_bodyBar != null)
-            _bodyBar.SetValue(_body.DamageReductionPercent);
+            _bodyBar.SetValue(_body.ArmorA);
 
         if (_helmetBar != null)
-            _helmetBar.SetValue(_helmet.DamageReductionPercent);
-
-        SyncHud();
-    }
-
-    private void SyncHud()
-    {
-        if (HUDManager.Instance == null) return;
-
-        HUDData data = HUDManager.Instance.GetHUDData();
-        if (data == null) return;
-
-        data.armorPercent = BodyReduction;    
-        data.helmetPercent = HelmetReduction; 
+            _helmetBar.SetValue(_helmet.ArmorA);
     }
 }

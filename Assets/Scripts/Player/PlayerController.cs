@@ -71,12 +71,7 @@ public class PlayerController : MonoBehaviour
 
     // ================= LIFECYCLE =================
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-    private static void HideCursorOnLoad()
-    {
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-    }
+   
 
     private void Awake()
     {
