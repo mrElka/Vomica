@@ -37,8 +37,9 @@ namespace CharacterEquipment
 
         [Header("Характеристики: оружие")]
         [Tooltip("Класс из документа баланса. Задаёт урон и его тип, дальность, цикл, " +
-                 "замах, расход выносливости и количество рук. Отдельных чисел у предмета нет.")]
-        public WeaponClass weaponClass = WeaponClass.Unarmed;
+                 "замах, расход выносливости и количество рук. Отдельных чисел у предмета нет. " +
+                 "Поле оставлено для совместимости — баланс берётся снизу из статов.")]
+        [HideInInspector] public WeaponClass weaponClass = WeaponClass.Unarmed;
 
         [Header("Характеристики: броня")]
         [Tooltip("Предмет из набора брони. Задаёт защиту A, профиль материала и штрафы. " +
@@ -53,7 +54,7 @@ namespace CharacterEquipment
 
         public bool IsWeapon => category == EquipmentCategory.Weapon;
 
-        /// <summary> Табличные показатели класса: урон, дальность, цикл, замах, выносливость. </summary>
+        /// <summary> Табличные показатели класса: урон, дальность, цикл, замах, выносливость. Берутся из weaponClass.</summary>
         public WeaponClassStats WeaponStats => VomicaBalance.GetWeapon(weaponClass);
 
         public bool HasWeaponStats => IsWeapon && weaponClass != WeaponClass.Unarmed;

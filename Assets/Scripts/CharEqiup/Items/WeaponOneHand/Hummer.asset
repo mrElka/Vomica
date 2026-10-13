@@ -20,7 +20,7 @@ MonoBehaviour:
   weaponSubCategory: 2
   modelPrefab: {fileID: 2134474218785128756, guid: 66dc42b625241764488fa500772892d2, type: 3}
   modelPrefabLeft: {fileID: 0}
-  holdPose: 1
+  holdPose: 3
   weaponClass: 6
   armorPiece: 0
   extraStats: []

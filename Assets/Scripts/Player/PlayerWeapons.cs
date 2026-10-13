@@ -143,13 +143,6 @@ public class PlayerWeapons : MonoBehaviour
 
     private void Update()
     {
-        if (selectWithNumberKeys && inputHandler != null)
-        {
-            int slot = inputHandler.WeaponSlotPressed;
-            if (slot >= 0 && slot < weapons.Count)
-                SelectWeapon(slot);
-        }
-
         // Правка selectedItem прямо в инспекторе во время игры тоже должна сработать
         if (appliedItem != selectedItem)
             ApplySelection();
@@ -203,11 +196,11 @@ public class PlayerWeapons : MonoBehaviour
         return -1;
     }
 
-    /// <summary>Цифры 1..9. Инвентарь выключает их, чтобы оружием управлял он.</summary>
+    [System.Obsolete("Быстрые слоты убраны: оружие берётся только из экипировки (CharacterEquipment/PlayerGear)")]
     public bool SelectWithNumberKeys
     {
-        get => selectWithNumberKeys;
-        set => selectWithNumberKeys = value;
+        get => false;
+        set { }
     }
 
     /// <summary>

@@ -101,6 +101,9 @@ public class PlayerController : MonoBehaviour
         if (_animator == null)
             _animator = PlayerAnimatorUtility.Resolve(transform, _animatorController);
 
+        // Гарантируем позы рук: если на игроке есть CharacterEquipment, но нет контроллера поз — добавляем
+        TryEnsurePoseController();
+
         HidePlaceholderCapsuleMesh();
 
         if (_lockCursorOnStart)
@@ -335,6 +338,14 @@ public class PlayerController : MonoBehaviour
         Vector3 forward = _cam.transform.forward;
         forward.y = 0f;
         return forward.sqrMagnitude > 0.0001f ? forward.normalized : transform.forward;
+    }
+
+    private void TryEnsurePoseController()
+    {
+        var eq = GetComponent<CharacterEquipment.CharacterEquipment>();
+        if (eq == null) return;
+        var pose = GetComponent<CharacterEquipment.CharacterPoseController>();
+        if (pose == null) gameObject.AddComponent<CharacterEquipment.CharacterPoseController>();
     }
 
     private void HidePlaceholderCapsuleMesh()

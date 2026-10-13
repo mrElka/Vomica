@@ -48,6 +48,7 @@ public class CameraSwitcher : MonoBehaviour
     [SerializeField] private PlayerCombat playerCombat;
 
     private CinemachineOrbitalFollow _orbital;
+    private CinemachinePanTilt _firstPanTilt;
     private bool _thirdPersonActive;
 
     /// <summary>true — активен вид от третьего лица.</summary>
@@ -74,6 +75,9 @@ public class CameraSwitcher : MonoBehaviour
 
         if (_thirdPersonCamera != null)
             _orbital = _thirdPersonCamera.GetComponent<CinemachineOrbitalFollow>();
+
+        if (_firstPersonCamera != null)
+            _firstPanTilt = _firstPersonCamera.GetComponent<CinemachinePanTilt>();
 
         _thirdPersonActive = _startInThirdPerson;
         Apply();
@@ -187,18 +191,28 @@ public class CameraSwitcher : MonoBehaviour
 
     private void HandleOrbitInput()
     {
-        if (!_thirdPersonActive || _orbital == null) return;
-
         Mouse mouse = Mouse.current;
         if (mouse == null) return;
 
         Vector2 delta = mouse.delta.ReadValue();
         if (delta.sqrMagnitude <= 0f) return;
 
-        _orbital.HorizontalAxis.Value += delta.x * _mouseSensitivityX;
+        if (!_thirdPersonActive && _firstPanTilt != null)
+        {
+            // FP: крутим CinemachinePanTilt напрямую, без InputActionReference
+            _firstPanTilt.PanAxis.Value += delta.x * _mouseSensitivityX;
+            float tilt = _firstPanTilt.TiltAxis.Value - delta.y * _mouseSensitivityY;
+            _firstPanTilt.TiltAxis.Value = Mathf.Clamp(tilt, _verticalRange.x, _verticalRange.y);
+            return;
+        }
 
-        float tilt = _orbital.VerticalAxis.Value - delta.y * _mouseSensitivityY;
-        _orbital.VerticalAxis.Value = Mathf.Clamp(tilt, _verticalRange.x, _verticalRange.y);
+        if (_thirdPersonActive && _orbital != null)
+        {
+            _orbital.HorizontalAxis.Value += delta.x * _mouseSensitivityX;
+
+            float tilt = _orbital.VerticalAxis.Value - delta.y * _mouseSensitivityY;
+            _orbital.VerticalAxis.Value = Mathf.Clamp(tilt, _verticalRange.x, _verticalRange.y);
+        }
     }
 
     // ================= THIRD PERSON CAMERA =================
