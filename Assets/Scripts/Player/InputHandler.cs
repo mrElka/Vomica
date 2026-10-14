@@ -36,7 +36,7 @@ public class InputHandler : MonoBehaviour
         ReadMouse(mouse);
     }
 
- 
+    /// <summary>Считывает WASD и стрелки, собирает нормализованный вектор движения.</summary>
     private void ReadMovement(Keyboard keyboard)
     {
         float x = 0f;
@@ -49,7 +49,7 @@ public class InputHandler : MonoBehaviour
 
         MovementInput = Vector2.ClampMagnitude(new Vector2(x, y), 1f);
     }
-
+    /// <summary>Считывает разовые и удерживаемые действия с клавиатуры.</summary>
     private void ReadActionKeys(Keyboard keyboard)
     {
         JumpPressed = keyboard.spaceKey.wasPressedThisFrame;
@@ -60,7 +60,7 @@ public class InputHandler : MonoBehaviour
 
         RunHeld = keyboard.leftCtrlKey.isPressed;
     }
-
+    /// <summary>Считывает атаку с мыши (левая или правая кнопка).</summary>
     private void ReadMouse(Mouse mouse)
     {
         AttackPressed = mouse != null &&

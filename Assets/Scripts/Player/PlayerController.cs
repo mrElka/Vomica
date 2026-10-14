@@ -2,6 +2,10 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+/// <summary>
+/// Контроллер игрока: движение, бег, прыжок, рывок, гравитация и синхронизация тела с камерой.
+/// Параметры удара и анимации берутся из компонентов на этом же объекте.
+/// </summary>
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
@@ -57,9 +61,16 @@ public class PlayerController : MonoBehaviour
     private float _dashCooldownTimer;
     private Vector3 _dashDirection;
 
+    /// <summary>Может ли игрок двигаться (выключается, например, при смерти).</summary>
     public bool CanMove => _canMove;
+
+    /// <summary>Идёт ли сейчас рывок.</summary>
     public bool IsDashing => _isDashing;
+
+    /// <summary>Стоит ли игрок на земле.</summary>
     public bool IsGrounded => _isGrounded;
+
+    /// <summary>Бежит ли игрок (удержание Ctrl + движение + есть стамина).</summary>
     public bool IsRunning => _isRunning;
 
     /// <summary>Активная камера. Переключается из CameraSwitcher.</summary>
@@ -68,10 +79,6 @@ public class PlayerController : MonoBehaviour
         get => _cam;
         set => _cam = value;
     }
-
-    // ================= LIFECYCLE =================
-
-   
 
     private void Awake()
     {
@@ -96,12 +103,8 @@ public class PlayerController : MonoBehaviour
         if (_animator == null)
             _animator = PlayerAnimatorUtility.Resolve(transform, _animatorController);
 
-        // Гарантируем позы рук: если на игроке есть CharacterEquipment, но нет контроллера поз — добавляем
         TryEnsurePoseController();
-
         HidePlaceholderCapsuleMesh();
-
-
 
         if (_lockCursorOnStart)
         {
@@ -135,7 +138,7 @@ public class PlayerController : MonoBehaviour
         if (val.isPressed) TryDash();
     }
 
-    void Update()
+    private void Update()
     {
         ReadInput();
 
@@ -155,9 +158,8 @@ public class PlayerController : MonoBehaviour
         SyncBodyToCamera();
     }
 
-    // ================= INPUT =================
-
-    void ReadInput()
+    /// <summary>Читает ввод с InputHandler и реагирует на разовые нажатия.</summary>
+    private void ReadInput()
     {
         if (inputHandler == null) return;
 
@@ -167,7 +169,8 @@ public class PlayerController : MonoBehaviour
         if (inputHandler.DashPressed) TryDash();
     }
 
-    void TryJump()
+    /// <summary>Пытается прыгнуть: только с земли, не в рывке, с разрешением на движение.</summary>
+    private void TryJump()
     {
         if (!_isGrounded || _isDashing || !_canMove) return;
 
@@ -177,7 +180,8 @@ public class PlayerController : MonoBehaviour
             _animator.SetTrigger(_jumpTrigger);
     }
 
-    void TryDash()
+    /// <summary>Пытается сделать рывок: проверяет кулдаун, стамину и тратит её.</summary>
+    private void TryDash()
     {
         if (_dashCooldownTimer > 0 || _isDashing || !_canMove) return;
         if (stamina != null && !stamina.TrySpendDash()) return;
@@ -195,9 +199,8 @@ public class PlayerController : MonoBehaviour
             _animator.SetTrigger(_dashTrigger);
     }
 
-    // ================= GROUND =================
-
-    void CheckGround()
+    /// <summary>Проверяет землю под игроком через Raycast вниз.</summary>
+    private void CheckGround()
     {
         float rayLength = (_characterController.height / 2f) + _groundOffset;
 
@@ -212,9 +215,8 @@ public class PlayerController : MonoBehaviour
             _velocity.y = -2f;
     }
 
-    // ================= MOVEMENT =================
-
-    void HandleMovement()
+    /// <summary>Двигает игрока в направлении ввода. Учитывает бег и контроль в воздухе.</summary>
+    private void HandleMovement()
     {
         if (_isDashing) return;
 
@@ -242,9 +244,8 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    // ================= DASH =================
-
-    void HandleDash()
+    /// <summary>Двигает игрока в сторону рывка, пока не вышло время.</summary>
+    private void HandleDash()
     {
         if (_dashCooldownTimer > 0)
             _dashCooldownTimer -= Time.deltaTime;
@@ -258,17 +259,15 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    // ================= GRAVITY =================
-
-    void HandleGravity()
+    /// <summary>Применяет гравитацию к вертикальной скорости.</summary>
+    private void HandleGravity()
     {
         _velocity.y += _gravity * Time.deltaTime;
         _characterController.Move(_velocity * Time.deltaTime);
     }
 
-    // ================= ANIMATION =================
-
-    void UpdateAnimation()
+    /// <summary>Передаёт в Animator скорость (Speed) и признак бега (Run).</summary>
+    private void UpdateAnimation()
     {
         if (_animator == null) return;
 
@@ -285,12 +284,8 @@ public class PlayerController : MonoBehaviour
         );
 
         _animator.SetFloat(_speedParam, smoothedSpeed);
-
-        // Передаём признак бега
         _animator.SetBool(_runParam, _isRunning);
     }
-
-    // ================= FPS BODY SYNC =================
 
     /// <summary>FPS: тело всегда смотрит туда же, куда камера (по горизонтали).</summary>
     private void SyncBodyToCamera()
@@ -301,8 +296,7 @@ public class PlayerController : MonoBehaviour
         _visualRoot.rotation = Quaternion.Euler(0f, camYaw, 0f);
     }
 
-    // ================= PUBLIC API =================
-
+    /// <summary>Включить / выключить управление. При выключении сбрасывает ввод и рывок.</summary>
     public void SetCanMove(bool value)
     {
         _canMove = value;
@@ -311,15 +305,15 @@ public class PlayerController : MonoBehaviour
         _isRunning = false;
     }
 
+    /// <summary>Заблокировать / разблокировать курсор.</summary>
     public void SetCursorLocked(bool locked)
     {
         Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
         Cursor.visible = !locked;
     }
 
-    // ================= HELPERS =================
-
-    Vector3 GetCameraRelativeMove()
+    /// <summary>Возвращает направление движения относительно камеры (yaw).</summary>
+    private Vector3 GetCameraRelativeMove()
     {
         Vector3 input = new Vector3(_moveInput.x, 0f, _moveInput.y);
 
@@ -328,7 +322,8 @@ public class PlayerController : MonoBehaviour
         return Quaternion.AngleAxis(_cam.transform.eulerAngles.y, Vector3.up) * input;
     }
 
-    Vector3 GetCameraFlatForward()
+    /// <summary>Направление «вперёд» камеры без вертикального наклона.</summary>
+    private Vector3 GetCameraFlatForward()
     {
         if (_cam == null) return transform.forward;
 
@@ -337,14 +332,18 @@ public class PlayerController : MonoBehaviour
         return forward.sqrMagnitude > 0.0001f ? forward.normalized : transform.forward;
     }
 
+    /// <summary>Если на игроке есть CharacterEquipment, но нет контроллера поз — добавляет его.</summary>
     private void TryEnsurePoseController()
     {
         var eq = GetComponent<CharacterEquipment.CharacterEquipment>();
         if (eq == null) return;
+
         var pose = GetComponent<CharacterEquipment.CharacterPoseController>();
-        if (pose == null) gameObject.AddComponent<CharacterEquipment.CharacterPoseController>();
+        if (pose == null)
+            gameObject.AddComponent<CharacterEquipment.CharacterPoseController>();
     }
 
+    /// <summary>Прячет меш капсулы-заглушки, если модель игрока уже подгружена.</summary>
     private void HidePlaceholderCapsuleMesh()
     {
         if (_visualRoot == null) return;

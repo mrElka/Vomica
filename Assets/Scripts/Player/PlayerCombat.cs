@@ -19,13 +19,11 @@ using UnityEngine;
 // - CinemachineCamera — направление удара считается вдоль активной камеры.
 public class PlayerCombat : MonoBehaviour
 {
-
     [Header("Combat (fallback, если нет оружия)")]
     [SerializeField] private int _damage = 20;
     [SerializeField] private float _attackRange = 2f;
     [SerializeField] private float _attackDistance = 1.5f;
     [SerializeField] private float _attackCooldown = 0.45f;
-
 
     [Header("Balance v0.1")]
     [Tooltip("Арсенал игрока. Если оружие выбрано, показатели берутся из его класса")]
@@ -40,14 +38,12 @@ public class PlayerCombat : MonoBehaviour
     [Tooltip("Один взмах поражает одну цель")]
     [SerializeField] private bool _singleTargetPerSwing = true;
 
-
     [Header("Links")]
     [SerializeField] private CinemachineCamera _cam;
     [SerializeField] private PlayerController _playerController;
     [SerializeField] private PlayerHealth _playerHealth;
     [SerializeField] private PlayerStamina _stamina;
     [SerializeField] private InputHandler inputHandler;
-
 
     [Header("Animation")]
     [SerializeField] private RuntimeAnimatorController _animatorController;
@@ -57,26 +53,28 @@ public class PlayerCombat : MonoBehaviour
     [Tooltip("Урон в момент замаха из таблицы оружия, а не в кадр нажатия")]
     [SerializeField] private bool _syncDamageToWindup = true;
 
-
     [Header("Debug")]
     [SerializeField] private bool _debugShowCanAttack = true;
-
 
     private float _nextAttackTime;
     private Coroutine _attackRoutine;
 
+    /// <summary>Активная камера. Меняется из CameraSwitcher, задаёт направление удара.</summary>
     public CinemachineCamera ActiveCamera
     {
         get => _cam;
         set => _cam = value;
     }
 
+    /// <summary>true — у игрока выбрано оружие из таблицы, значит показатели идут из баланса.</summary>
     private bool HasClassWeapon => _weapons != null && _weapons.HasWeapon;
 
+    /// <summary>Урон одного попадания с разбивкой по типам (рубящий/колющий/дробящий).</summary>
     public DamagePacket CurrentDamage => HasClassWeapon
         ? _weapons.Damage
         : DamagePacket.Of(_fallbackDamageType, Damage);
 
+    /// <summary>Итоговый урон одним числом — для логов и отладки.</summary>
     public int Damage
     {
         get
@@ -90,6 +88,7 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
+    /// <summary>Полный цикл удара: замах + восстановление.</summary>
     public float AttackCooldown
     {
         get
@@ -103,7 +102,7 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
-
+    /// <summary>Радиус сферы атаки (для старого режима).</summary>
     public float AttackRange
     {
         get => _stamina != null && _stamina.CurrentWeapon != null
@@ -111,7 +110,7 @@ public class PlayerCombat : MonoBehaviour
             : _attackRange;
     }
 
-
+    /// <summary>Смещение центра атаки от игрока вперёд.</summary>
     public float AttackDistance
     {
         get => _stamina != null && _stamina.CurrentWeapon != null
@@ -119,13 +118,15 @@ public class PlayerCombat : MonoBehaviour
             : _attackDistance;
     }
 
+    /// <summary>Максимальная дальность удара от центра персонажа, м.</summary>
     public float Reach => HasClassWeapon ? _weapons.Range : AttackDistance + AttackRange;
 
-
+    /// <summary>Радиус сферы попадания. Ограничен половиной дальности.</summary>
     public float HitRadius => HasClassWeapon
         ? Mathf.Min(_classHitRadius, _weapons.Range * 0.5f)
         : AttackRange;
 
+    /// <summary>Расход выносливости за один удар.</summary>
     public float StaminaCost
     {
         get
@@ -135,6 +136,7 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
+    /// <summary>Может ли игрок ударить прямо сейчас.</summary>
     public bool CanAttack
     {
         get
@@ -146,8 +148,6 @@ public class PlayerCombat : MonoBehaviour
             return true;
         }
     }
-
- 
 
     private void Awake()
     {
@@ -175,6 +175,7 @@ public class PlayerCombat : MonoBehaviour
             TryAttack();
     }
 
+    /// <summary>Пытается выполнить удар: условия, стамина, анимация, урон.</summary>
     public void TryAttack()
     {
         if (!CanAttack) return;
@@ -196,6 +197,7 @@ public class PlayerCombat : MonoBehaviour
             DealDamage();
     }
 
+    /// <summary>Ждёт фазу замаха и наносит урон — чтобы он совпал с моментом удара клинка.</summary>
     private IEnumerator DealDamageAfter(float delay)
     {
         yield return new WaitForSeconds(delay);
@@ -203,7 +205,7 @@ public class PlayerCombat : MonoBehaviour
         _attackRoutine = null;
     }
 
-
+    /// <summary>Наносит урон всем противникам в сфере перед игроком.</summary>
     public void DealDamage()
     {
         float radius = HitRadius;
@@ -240,7 +242,7 @@ public class PlayerCombat : MonoBehaviour
             nearest.TakeDamage(packet);
     }
 
-
+    /// <summary>Направление удара: вдоль камеры, если она есть, иначе вдоль игрока.</summary>
     private Vector3 GetAttackDirection()
     {
         if (_cam != null)
@@ -252,7 +254,6 @@ public class PlayerCombat : MonoBehaviour
         }
         return transform.forward;
     }
-
 
     private void OnGUI()
     {
@@ -277,6 +278,7 @@ public class PlayerCombat : MonoBehaviour
         DrawArmorLine(x, y, blockWidth, lineHeight, style);
     }
 
+    /// <summary>Строка ATTACK: READY / BLOCKED + причина блокировки.</summary>
     private float DrawAttackLine(float x, float y, float w, float h, GUIStyle style)
     {
         string state = CanAttack ? "<color=lime>READY</color>" : "<color=red>BLOCKED</color>";
@@ -294,6 +296,7 @@ public class PlayerCombat : MonoBehaviour
         return y + h;
     }
 
+    /// <summary>Строка STAMINA + название текущего оружия.</summary>
     private float DrawStaminaLine(float x, float y, float w, float h, GUIStyle style)
     {
         if (_stamina == null) return y;
@@ -311,7 +314,7 @@ public class PlayerCombat : MonoBehaviour
         return y + h;
     }
 
-
+    /// <summary>Строка с характеристиками класса оружия из таблицы баланса.</summary>
     private float DrawWeaponLine(float x, float y, float w, float h, GUIStyle style)
     {
         if (!HasClassWeapon) return y;
@@ -322,6 +325,7 @@ public class PlayerCombat : MonoBehaviour
         return y + h;
     }
 
+    /// <summary>Строка ARMOR: защита A, профиль материала, штрафы движения и атаки.</summary>
     private void DrawArmorLine(float x, float y, float w, float h, GUIStyle style)
     {
         if (_playerHealth == null || _playerHealth.Armor == null) return;
@@ -336,6 +340,7 @@ public class PlayerCombat : MonoBehaviour
             style);
     }
 
+    /// <summary>Сфера удара в Scene при выделенном игроке.</summary>
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.blue;

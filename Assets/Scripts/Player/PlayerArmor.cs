@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-
+/// <summary>
 // СЛОТ БРОНИ
 
 // Один слот защиты: тело или шлем.
@@ -9,6 +9,7 @@ using UnityEngine.UI;
 // - Профиль материала (Quilted / Mail / Plate и т.д.) — меняет эффективность против разных типов урона.
 // - Штрафы движения и частоты атак.
 // Значения приходят из VomicaBalance.ArmorPresets или назначаются в рантайме из инвентаря.
+/// </summary>
 [System.Serializable]
 public class ArmorSlot
 {
@@ -60,7 +61,7 @@ public class ArmorSlot
         _isEquipped = true;
     }
 
-
+    /// <summary>Надеть предмет с явными параметрами из инвентаря.</summary>
     public void Wear(string name, float armorA, ArmorProfile profile,
                      float movementPenalty, float attackPenalty)
     {
@@ -72,7 +73,7 @@ public class ArmorSlot
         _isEquipped = true;
     }
 
-
+    /// <summary>Снять предмет: слот перестаёт защищать и штрафовать.</summary>
     public void TakeOff()
     {
         _armorA = 0f;
@@ -85,7 +86,7 @@ public class ArmorSlot
 
     public void SetEquipped(bool value) => _isEquipped = value;
 }
-
+/// <summary>
 //  БРОНЯ ИГРОКА
 
 // Управляет двумя слотами защиты игрока (тело и шлем) и считает урон по модели баланса v0.1.
@@ -100,6 +101,7 @@ public class ArmorSlot
 // эффективная защита = A × коэффициент профиля против типа урона.
 // Далее — по формуле в духе Valheim: при низкой защите она вычитается из урона,
 // при высокой — работает вторая ветвь.
+/// <summary>
 public class PlayerArmor : MonoBehaviour
 {
 
@@ -125,15 +127,18 @@ public class PlayerArmor : MonoBehaviour
 
  
     public float AttackSpeedPenalty01 => Mathf.Clamp01(_body.AttackPenalty + _helmet.AttackPenalty);
-
+    /// <summary>
     //РАСЧЁТ УРОНА 
     // Возвращает слот, который защищает указанную зону.
     // Голова — шлем, всё остальное — тело. Броня разных зон не складывается.
+    /// </summary>
     public ArmorSlot GetSlot(BodyZone zone) => zone == BodyZone.Head ? _helmet : _body;
 
+    /// </summary>
     // Потеря HP от попадания с учётом типов урона и зоны.
     // Если у задетой зоны есть защита A — считаем по формуле документа.
     // Если A = 0 — считаем, что брони нет, урон идёт напрямую.
+    /// </summary>
     public float ApplyArmor(DamagePacket damage, BodyZone zone = BodyZone.Torso)
     {
         float total = damage.Total;
@@ -176,7 +181,7 @@ public class PlayerArmor : MonoBehaviour
         UpdateBars();
     }
 
-
+    /// <summary>Создаёт две полоски UI (тело и шлем), если они не назначены в инспекторе.</summary>
     private void CreateBars()
     {
         GameObject canvasGo = new GameObject("PlayerArmorCanvas");

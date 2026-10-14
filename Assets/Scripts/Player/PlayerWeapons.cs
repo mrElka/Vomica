@@ -4,8 +4,8 @@ using CharacterEquipment;
 using UnityEngine;
 
 /// <summary>
-/// Одно оружие в арсенале. Числа здесь не хранятся: урон, дальность, цикл
-/// и расход выносливости приходят из таблицы по классу (VomicaBalance).
+/// Одно оружие в арсенале. Числа не хранятся: урон, дальность, цикл и расход
+/// выносливости приходят из таблицы по классу (VomicaBalance).
 /// </summary>
 [Serializable]
 public class WeaponItem
@@ -32,17 +32,18 @@ public class WeaponItem
     [Tooltip("Масштаб модели (после компенсации масштаба руки)")]
     public Vector3 handScale = Vector3.one;
 
+    /// <summary>Итоговое название: своё displayName или название класса, если пусто.</summary>
     public string ResolvedName => string.IsNullOrWhiteSpace(displayName)
         ? VomicaBalance.GetWeapon(weaponClass).DisplayName
         : displayName;
 
+    /// <summary>Показатели класса оружия из таблицы баланса.</summary>
     public WeaponClassStats Stats => VomicaBalance.GetWeapon(weaponClass);
 }
 
 /// <summary>
-/// Арсенал игрока. Вешается на игрока: в списке weapons задаются название,
-/// класс и модель, а selectedItem выбирает активное оружие. Все показатели
-/// считаются от класса, штрафы частоты атак берутся из надетой брони.
+/// Арсенал игрока: список оружия, выбор активного, спавн модели в точке крепления.
+/// Все показатели считаются от класса оружия, штрафы частоты атак берутся из брони.
 /// </summary>
 public class PlayerWeapons : MonoBehaviour
 {
@@ -78,37 +79,21 @@ public class PlayerWeapons : MonoBehaviour
     /// <summary>Сработало при смене оружия. null в аргументе — руки пусты.</summary>
     public event Action<WeaponItem> OnWeaponChanged;
 
-    // ================= ВЫБОР =================
-
     public IReadOnlyList<WeaponItem> Weapons => weapons;
-
     public int SelectedIndex => selectedItem;
 
     /// <summary>Выбранное оружие или null, если руки пусты.</summary>
     public WeaponItem SelectedItem => IsValidIndex(selectedItem) ? weapons[selectedItem] : null;
 
     public bool HasWeapon => SelectedItem != null && SelectedItem.weaponClass != WeaponClass.Unarmed;
-
     public WeaponClass SelectedClass => SelectedItem != null ? SelectedItem.weaponClass : WeaponClass.Unarmed;
-
     public string SelectedName => SelectedItem != null ? SelectedItem.ResolvedName : "пусто";
 
-    // ================= ПОКАЗАТЕЛИ ИЗ КЛАССА =================
-
-    /// <summary>Табличные показатели класса до штрафов снаряжения.</summary>
     public WeaponClassStats Stats => VomicaBalance.GetWeapon(SelectedClass);
-
-    /// <summary>Урон одного попадания, разложенный по типам.</summary>
     public DamagePacket Damage => Stats.Damage;
-
     public float TotalDamage => Stats.Damage.Total;
-
-    /// <summary>Максимальная дальность удара от центра персонажа, м.</summary>
     public float Range => Stats.Range;
-
     public float StaminaCost => Stats.StaminaCost;
-
-    /// <summary>1 — одноручное, 2 — двуручное, 0 — предмет левой руки.</summary>
     public int Hands => Stats.Hands;
 
     /// <summary>Сумма штрафов частоты атак от надетой брони, доля.</summary>
@@ -117,15 +102,29 @@ public class PlayerWeapons : MonoBehaviour
     /// <summary>Цикл атаки с учётом штрафа брони: базовый / (1 − штраф).</summary>
     public float Cycle => VomicaBalance.ApplyAttackPenalty(Stats.Cycle, AttackPenalty);
 
-    /// <summary>Замах растягивается тем же штрафом, что и цикл.</summary>
     public float Windup => VomicaBalance.ApplyAttackPenalty(Stats.Windup, AttackPenalty);
-
-    /// <summary>Активная фаза, когда оружие может нанести урон.</summary>
     public float ActivePhase => VomicaBalance.ApplyAttackPenalty(VomicaBalance.WeaponActivePhase, AttackPenalty);
-
     public float AttacksPerSecond => Cycle > 0f ? 1f / Cycle : 0f;
 
-    // ================= ЖИЗНЕННЫЙ ЦИКЛ =================
+    /// <summary>Спавнить модель отсюда. Выключается, когда модель уже на кости руки.</summary>
+    public bool ShowModel
+    {
+        get => showModel;
+        set
+        {
+            if (showModel == value) return;
+
+            showModel = value;
+            ApplySelection();
+        }
+    }
+
+    [Obsolete("Быстрые слоты убраны: оружие берётся только из экипировки (CharacterEquipment/PlayerGear)")]
+    public bool SelectWithNumberKeys
+    {
+        get => false;
+        set { }
+    }
 
     private void Awake()
     {
@@ -135,7 +134,6 @@ public class PlayerWeapons : MonoBehaviour
 
     private void Start()
     {
-        // PlayerArmor может быть добавлена в Awake другим скриптом, поэтому ищем её здесь
         if (armor == null) armor = GetComponent<PlayerArmor>();
 
         ApplySelection();
@@ -143,12 +141,9 @@ public class PlayerWeapons : MonoBehaviour
 
     private void Update()
     {
-        // Правка selectedItem прямо в инспекторе во время игры тоже должна сработать
         if (appliedItem != selectedItem)
             ApplySelection();
     }
-
-    // ================= API =================
 
     /// <summary>Выбрать оружие по индексу в списке. -1 — убрать оружие.</summary>
     public void SelectWeapon(int index)
@@ -196,29 +191,6 @@ public class PlayerWeapons : MonoBehaviour
         return -1;
     }
 
-    [System.Obsolete("Быстрые слоты убраны: оружие берётся только из экипировки (CharacterEquipment/PlayerGear)")]
-    public bool SelectWithNumberKeys
-    {
-        get => false;
-        set { }
-    }
-
-    /// <summary>
-    /// Спавнить модель оружия здесь. Выключается, когда модель уже на кости руки (CharacterEquipment).
-    /// </summary>
-    public bool ShowModel
-    {
-        get => showModel;
-        set
-        {
-            if (showModel == value) return;
-
-            showModel = value;
-            ApplySelection();
-        }
-    }
-
-    /// <summary>Убрать оружие из рук.</summary>
     public void Unequip() => SelectWeapon(-1);
 
     /// <summary>Добавить оружие в список в рантайме. Возвращает его индекс.</summary>
@@ -244,10 +216,12 @@ public class PlayerWeapons : MonoBehaviour
 
     private string HandsLabel => Hands == 0 ? "левая" : Hands.ToString();
 
-    // ================= ВНУТРЕННЕЕ =================
-
     private bool IsValidIndex(int index) => index >= 0 && index < weapons.Count && weapons[index] != null;
 
+    /// <summary>
+    /// Применяет выбранное оружие: уничтожает старую модель, спавнит новую
+    /// в точке крепления с учётом позиции, поворота и масштаба из WeaponItem.
+    /// </summary>
     private void ApplySelection()
     {
         appliedItem = selectedItem;
@@ -266,11 +240,9 @@ public class PlayerWeapons : MonoBehaviour
 
             spawnedModel = Instantiate(item.model, parent);
 
-            // Позиция и поворот — из WeaponItem
             spawnedModel.transform.localPosition = item.handPosition;
             spawnedModel.transform.localRotation = Quaternion.Euler(item.handEulerRotation);
 
-            // Компенсируем масштаб родителя (кости руки), чтобы модель не раздувалась
             Vector3 parentScale = parent.lossyScale;
             Vector3 compensation = new Vector3(
                 parentScale.x != 0f ? 1f / parentScale.x : 1f,
@@ -301,8 +273,6 @@ public class PlayerWeapons : MonoBehaviour
         else
             selectedItem = Mathf.Clamp(selectedItem, -1, weapons.Count - 1);
 
-        // Форсим ApplySelection в следующем Update, чтобы правки в инспекторе
-        // (позиция, поворот, масштаб) применялись без перезапуска Play
         appliedItem = int.MinValue;
     }
 }

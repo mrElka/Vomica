@@ -1,5 +1,9 @@
 ﻿using UnityEngine;
 
+/// <summary>
+/// Выносливость игрока. Тратится на атаку, рывок и бег, восстанавливается со временем.
+/// Стоимости могут модифицироваться оружием (WeaponData) и баффами/дебаффами через публичные модификаторы.
+/// </summary>
 public class PlayerStamina : MonoBehaviour
 {
     [Header("Stamina")]
@@ -19,7 +23,7 @@ public class PlayerStamina : MonoBehaviour
     [SerializeField, Range(0f, 5f)] private float _runCostModifier = 1f;
 
     [Header("Weapon")]
-    [Tooltip("Текущее оружие. Если null — используются базовые стоимости.")]
+    [Tooltip("Текущее оружие. Если null — используются базовые стоимости")]
     [SerializeField] private WeaponData _currentWeapon;
 
     [Header("UI")]
@@ -28,27 +32,28 @@ public class PlayerStamina : MonoBehaviour
     private float _regenTimer;
     private bool _regenBlocked;
 
+
     public float MaxStamina => _maxStamina;
+
     public float CurrentStamina => _currentStamina;
+
     public float Normalized => _maxStamina > 0f ? _currentStamina / _maxStamina : 0f;
+
     public bool IsEmpty => _currentStamina <= 0.001f;
 
-    /// <summary>Текущее оружие (можно менять в рантайме).</summary>
+ 
     public WeaponData CurrentWeapon
     {
         get => _currentWeapon;
         set => _currentWeapon = value;
     }
 
-    //  Базовые стоимости без оружия, но с учётом базовых модификаторов
-
     private float BaseAttackCost => _attackCost * _attackCostModifier;
+
     private float BaseDashCost => _dashCost * _dashCostModifier;
+
     private float BaseRunCostPerSecond => _runCostPerSecond * _runCostModifier;
 
-    //  Итоговые стоимости с учётом оружия 
-
-    /// <summary>Стоимость одной атаки (учитывает и базовые модификаторы, и оружие).</summary>
     public float AttackCost
     {
         get
@@ -60,7 +65,7 @@ public class PlayerStamina : MonoBehaviour
         }
     }
 
-    /// <summary>Стоимость одного рывка.</summary>
+    /// <summary>Стоимость одного рывка. Учитывает базовый модификатор и модификатор оружия.</summary>
     public float DashCost
     {
         get
@@ -72,7 +77,7 @@ public class PlayerStamina : MonoBehaviour
         }
     }
 
-    /// <summary>Стоимость бега в секунду.</summary>
+    /// <summary>Стоимость бега в секунду. Учитывает базовый модификатор и модификатор оружия.</summary>
     public float RunCostPerSecond
     {
         get
@@ -84,18 +89,21 @@ public class PlayerStamina : MonoBehaviour
         }
     }
 
-    //  Свойства-модификаторы (для баффов/дебаффов)
-
+    /// <summary>Модификатор стоимости атаки (для баффов/дебаффов). 1 — базовое значение.</summary>
     public float AttackCostModifier
     {
         get => _attackCostModifier;
         set => _attackCostModifier = Mathf.Max(0f, value);
     }
+
+    /// <summary>Модификатор стоимости рывка (для баффов/дебаффов). 1 — базовое значение.</summary>
     public float DashCostModifier
     {
         get => _dashCostModifier;
         set => _dashCostModifier = Mathf.Max(0f, value);
     }
+
+    /// <summary>Модификатор стоимости бега (для баффов/дебаффов). 1 — базовое значение.</summary>
     public float RunCostModifier
     {
         get => _runCostModifier;
@@ -116,8 +124,39 @@ public class PlayerStamina : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        HandleRegen();
+        UpdateBar();
+        SyncHud();
+    }
+
+    /// <summary>Восстанавливает выносливость после паузы или продолжает ждать окончания паузы.</summary>
+    private void HandleRegen()
+    {
+        if (_regenBlocked)
+        {
+            _regenTimer -= Time.deltaTime;
+            if (_regenTimer <= 0f)
+                _regenBlocked = false;
+            return;
+        }
+
+        if (_currentStamina < _maxStamina)
+            _currentStamina = Mathf.Min(_maxStamina, _currentStamina + _regenRate * Time.deltaTime);
+    }
+
+    /// <summary>Обновляет полоску стамины на экране.</summary>
+    private void UpdateBar()
+    {
+        if (staminaBar != null)
+            staminaBar.SetStamina(_currentStamina);
+    }
+
+    /// <summary>Проверяет, хватает ли выносливости на указанную трату.</summary>
     public bool CanSpend(float amount) => _currentStamina >= amount;
 
+    /// <summary>Пытается списать указанное количество выносливости. true — удалось.</summary>
     public bool TrySpend(float amount)
     {
         if (amount <= 0f) return true;
@@ -129,8 +168,10 @@ public class PlayerStamina : MonoBehaviour
     }
 
     public bool TrySpendAttack() => TrySpend(AttackCost);
+
     public bool TrySpendDash() => TrySpend(DashCost);
 
+    /// <summary>Расход выносливости за бег. Вызывать каждый кадр, пока игрок бежит.</summary>
     public void DrainRun(float deltaTime)
     {
         float cost = RunCostPerSecond * deltaTime;
@@ -140,36 +181,20 @@ public class PlayerStamina : MonoBehaviour
         BlockRegen();
     }
 
+    /// <summary>Восстановить указанное количество выносливости (например, зельем).</summary>
     public void Refill(float amount)
     {
         _currentStamina = Mathf.Min(_maxStamina, _currentStamina + Mathf.Max(0f, amount));
     }
 
+    /// <summary>Блокирует регенерацию на время задержки после траты.</summary>
     private void BlockRegen()
     {
         _regenTimer = _regenDelay;
         _regenBlocked = true;
     }
 
-    private void Update()
-    {
-        if (_regenBlocked)
-        {
-            _regenTimer -= Time.deltaTime;
-            if (_regenTimer <= 0f)
-                _regenBlocked = false;
-        }
-        else if (_currentStamina < _maxStamina)
-        {
-            _currentStamina = Mathf.Min(_maxStamina, _currentStamina + _regenRate * Time.deltaTime);
-        }
-
-        if (staminaBar != null)
-            staminaBar.SetStamina(_currentStamina);
-
-        SyncHud();
-    }
-
+    /// <summary>Передаёт текущее значение в HUDData.</summary>
     private void SyncHud()
     {
         if (HUDManager.Instance == null) return;

@@ -2,8 +2,14 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// Здоровье игрока: текущий и максимальный HP, приём урона, лечение, смерть и переход в меню.
+/// Урон проходит через PlayerArmor — по зоне попадания (голова — шлем, остальное — тело).
+/// HP хранится с дробной частью, потому что формула брони даёт нецелый урон.
+/// </summary>
 public class PlayerHealth : MonoBehaviour
 {
+    /// <summary>Синглтон-доступ к здоровью игрока.</summary>
     public static PlayerHealth Instance { get; private set; }
 
     [Header("Health")]
@@ -21,12 +27,18 @@ public class PlayerHealth : MonoBehaviour
     private PlayerController _playerController;
     private bool _isDead;
 
-    // HP хранится с дробной частью: формула брони из документа даёт нецелый урон
     private float _hpExact;
 
+    /// <summary>Максимальное здоровье.</summary>
     public int MaxHealth => _maxHealth;
+
+    /// <summary>Текущее здоровье (округлённое вверх).</summary>
     public int CurrentHealth => _currentHealth;
+
+    /// <summary>Мёртв ли игрок (по флагу или HP ≤ 0).</summary>
     public bool IsDead => _isDead || _currentHealth <= 0;
+
+    /// <summary>Ссылка на компонент брони игрока.</summary>
     public PlayerArmor Armor => armor;
 
     private void Awake()
@@ -44,7 +56,7 @@ public class PlayerHealth : MonoBehaviour
             armor = GetComponent<PlayerArmor>();
 
         if (armor == null)
-            armor = gameObject.AddComponent<PlayerArmor>(); // на случай, если забыл повесить вручную
+            armor = gameObject.AddComponent<PlayerArmor>();
 
         _currentHealth = Mathf.Clamp(_currentHealth, 0, _maxHealth);
         _hpExact = _currentHealth;
@@ -64,51 +76,30 @@ public class PlayerHealth : MonoBehaviour
             Instance = null;
     }
 
+    /// <summary>
+    /// Урон целым числом без разбивки по типу и зоне.
+    /// Использует суммарную защиту брони и шлема (без учёта профиля материала).
+    /// </summary>
     public void TakeDamage(int damage)
     {
         if (IsDead || damage <= 0)
             return;
 
-        // Броня (тело) + шлем режут урон раздельно
-        int finalDamage = armor != null ? armor.ApplyArmor(damage) : damage;
+        int finalDamage = armor != null
+            ? Mathf.RoundToInt(armor.ApplyArmor(DamagePacket.Of(DamageType.Blunt, damage), BodyZone.Torso))
+            : damage;
 
         ApplyHpLoss(finalDamage);
 
-        if (armor != null)
-        {
-            Debug.Log(
-                $"DMG: {damage} → {finalDamage} " +
-                $"(body {armor.Body.DamageReductionPercent:F0}%, " +
-                $"helmet {armor.Helmet.DamageReductionPercent:F0}%, " +
-                $"total -{armor.TotalReduction * 100f:F0}%) | " +
-                $"HP: {_currentHealth}/{_maxHealth}"
-            );
-        }
-        else
-        {
-            Debug.Log($"DMG: {damage} | HP: {_currentHealth}/{_maxHealth}");
-        }
+        Debug.Log($"DMG: {damage} → {finalDamage} | HP: {_currentHealth}/{_maxHealth}");
 
         if (_currentHealth <= 0)
             Die();
     }
 
-    public void Heal(int amount)
-    {
-        if (IsDead || amount <= 0)
-            return;
-
-        SetExactHealth(_hpExact + amount);
-    }
-
-    public void SetHealth(int newHealth)
-    {
-        SetExactHealth(newHealth);
-    }
-
     /// <summary>
-    /// Урон с разбивкой по типам. Защита берётся у задетой зоны: шлем отвечает
-    /// за голову, броня корпуса — за остальное, и они не складываются.
+    /// Урон с разбивкой по типам. Защита берётся у задетой зоны:
+    /// голова — шлем, остальное — тело. Зоны не складываются.
     /// </summary>
     public void TakeDamage(DamagePacket damage, BodyZone zone = BodyZone.Torso)
     {
@@ -122,6 +113,22 @@ public class PlayerHealth : MonoBehaviour
         Debug.Log($"DMG {damage} [{zone}] -> {loss:F2} HP | HP: {_hpExact:F1}/{_maxHealth}");
     }
 
+    /// <summary>Лечит игрока на указанное число HP.</summary>
+    public void Heal(int amount)
+    {
+        if (IsDead || amount <= 0)
+            return;
+
+        SetExactHealth(_hpExact + amount);
+    }
+
+    /// <summary>Устанавливает HP в указанное значение (с ограничением 0..MaxHealth).</summary>
+    public void SetHealth(int newHealth)
+    {
+        SetExactHealth(newHealth);
+    }
+
+    /// <summary>Применяет потерю HP (дробную) и проверяет смерть.</summary>
     private void ApplyHpLoss(float loss)
     {
         if (loss <= 0f) return;
@@ -129,6 +136,10 @@ public class PlayerHealth : MonoBehaviour
         SetExactHealth(_hpExact - loss);
     }
 
+    /// <summary>
+    /// Устанавливает точное (дробное) значение HP, обновляет UI и HUD.
+    /// Если HP дошло до нуля — вызывает Die().
+    /// </summary>
     private void SetExactHealth(float value)
     {
         _hpExact = Mathf.Clamp(value, 0f, _maxHealth);
@@ -141,6 +152,7 @@ public class PlayerHealth : MonoBehaviour
             Die();
     }
 
+    /// <summary>Обрабатывает смерть: отключает управление, показывает курсор, грузит меню.</summary>
     private void Die()
     {
         if (_isDead) return;
@@ -155,6 +167,7 @@ public class PlayerHealth : MonoBehaviour
         StartCoroutine(LoadMenuAfterDelay());
     }
 
+    /// <summary>Ждёт заданную задержку и загружает сцену меню.</summary>
     private IEnumerator LoadMenuAfterDelay()
     {
         if (_loadMenuDelay > 0f)
@@ -163,6 +176,7 @@ public class PlayerHealth : MonoBehaviour
         SceneManager.LoadScene(_menuSceneName);
     }
 
+    /// <summary>Передаёт текущее HP в HUDData (процент, флаги повреждения и низкого HP).</summary>
     private void SyncHud()
     {
         if (HUDManager.Instance == null) return;
