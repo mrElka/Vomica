@@ -38,6 +38,13 @@ namespace CharacterEquipment
             if (switcher != null) switcher.Refresh();
         }
 
+        /// <summary>Отметить уже надетый предмет без повторного экипирования.</summary>
+        public void SetSelectedWithoutNotify(bool selected)
+        {
+            toggle.SetIsOnWithoutNotify(selected);
+            if (switcher != null) switcher.Refresh();
+        }
+
         private void OnToggleChanged(bool isOn)
         {
             if (isOn) onSelected?.Invoke();

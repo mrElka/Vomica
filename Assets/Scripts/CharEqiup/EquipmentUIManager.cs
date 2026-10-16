@@ -93,12 +93,58 @@ namespace CharacterEquipment
             }
             spawnedButtons.Clear();
 
+            EquipmentItem equippedItem = FindEquippedItem(items);
+
             foreach (var item in items)
             {
                 var btn = Instantiate(itemButtonPrefab, itemGridContainer);
                 btn.Setup(item, itemToggleGroup, () => OnItemSelected(item));
+                btn.SetSelectedWithoutNotify(item == equippedItem);
                 spawnedButtons.Add(btn);
             }
+
+            if (equippedItem != null)
+                detailsPanel.Show(equippedItem);
+        }
+
+        /// <summary>
+        /// Кнопки сетки создаются заново при переключении вкладок. Поэтому их
+        /// состояние берём из экипировки персонажа, а не из старых Toggle.
+        /// </summary>
+        private EquipmentItem FindEquippedItem(List<EquipmentItem> items)
+        {
+            if (characterEquipment == null || items == null) return null;
+
+            foreach (EquipmentItem item in items)
+            {
+                if (item == null) continue;
+
+                EquipmentItem equipped = null;
+                switch (item.category)
+                {
+                    case EquipmentCategory.Helmet:
+                        equipped = characterEquipment.GetEquipped(EquipmentSlot.Helmet);
+                        break;
+                    case EquipmentCategory.Armor:
+                        equipped = characterEquipment.GetEquipped(EquipmentSlot.Body);
+                        break;
+                    case EquipmentCategory.Arms:
+                        equipped = characterEquipment.GetEquipped(EquipmentSlot.Arms);
+                        break;
+                    case EquipmentCategory.Legs:
+                        equipped = characterEquipment.GetEquipped(EquipmentSlot.Legs);
+                        break;
+                    case EquipmentCategory.Weapon:
+                        EquipmentItem rightHand = characterEquipment.GetEquipped(EquipmentSlot.RightHand);
+                        EquipmentItem leftHand = characterEquipment.GetEquipped(EquipmentSlot.LeftHand);
+                        if (rightHand == item || leftHand == item) return item;
+                        continue;
+                }
+
+                if (equipped == item) return item;
+            }
+
+            return null;
         }
 
         private void OnItemSelected(EquipmentItem item)
