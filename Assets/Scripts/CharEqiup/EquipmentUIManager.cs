@@ -104,6 +104,7 @@ namespace CharacterEquipment
         private void OnItemSelected(EquipmentItem item)
         {
             characterEquipment.Equip(item);
+            SelectedBattleLoadout.SetItem(item);
             detailsPanel.Show(item);
         }
     }

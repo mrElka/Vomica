@@ -63,6 +63,10 @@ public class PlayerGear : MonoBehaviour
     [SerializeField] private bool useSave = true;
     [SerializeField] private string saveFileName = "gear.json";
 
+    [Header("Тестовая сцена")]
+    [Tooltip("Оставить на персонаже только шлем и оружие, выбранные в меню снаряжения")]
+    [SerializeField] private bool useMenuSelectionOnly = true;
+
     [Header("Ссылки (пусто — найдутся на этом объекте)")]
     [SerializeField] private CharEquip equipment;
     [SerializeField] private InputHandler inputHandler;
@@ -373,7 +377,26 @@ public class PlayerGear : MonoBehaviour
     {
         Debug.Log($"[Gear] ApplyCarried start | scene={UnityEngine.SceneManagement.SceneManager.GetActiveScene().name} | carriedLoaded={carriedLoaded} file={SavePath} | Carried до Load: {DumpCarried()}");
 
-        if (!carriedLoaded)
+        // Экран выбора передаёт в бой только ID шлема и оружия. Такой набор имеет
+        // приоритет над старым сохранением и стартовым снаряжением тестовой сцены.
+        if (useMenuSelectionOnly)
+        {
+            SelectedBattleLoadout.ApplyTo(Carried);
+
+            // ID оружия намеренно хранится без номера руки. Руку определяет сам
+            // предмет из базы, чтобы щит и лук попали в левую кисть.
+            EquipmentItem selectedWeapon = Resolve(SelectedBattleLoadout.WeaponId);
+            if (selectedWeapon != null && selectedWeapon.category == EquipmentCategory.Weapon)
+            {
+                EquipmentSlot weaponSlot = selectedWeapon.PreferredHand == PreferredHand.Left
+                    ? EquipmentSlot.LeftHand
+                    : EquipmentSlot.RightHand;
+                Carried[weaponSlot] = selectedWeapon.itemId;
+            }
+
+            carriedLoaded = true;
+        }
+        else if (!carriedLoaded)
         {
             carriedLoaded = true;
             bool loaded = Load();
