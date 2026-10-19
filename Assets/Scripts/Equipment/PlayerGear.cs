@@ -106,6 +106,8 @@ public class PlayerGear : MonoBehaviour
 
     public bool HasShield => OffHand != null && OffHand.IsOffHand;
 
+    public EquipmentPickup NearestPickup => nearest;
+
     public string SavePath => Path.Combine(Application.persistentDataPath, saveFileName);
 
     // ================= ЖИЗНЕННЫЙ ЦИКЛ =================

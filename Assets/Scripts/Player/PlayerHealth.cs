@@ -61,9 +61,6 @@ public class PlayerHealth : MonoBehaviour
         _currentHealth = Mathf.Clamp(_currentHealth, 0, _maxHealth);
         _hpExact = _currentHealth;
 
-        if (healthBar == null)
-            healthBar = HealthBar.CreateScreenBar();
-
         if (healthBar != null)
             healthBar.SetMaxHealth(_maxHealth);
 

@@ -25,7 +25,7 @@ public class InputHandler : MonoBehaviour
         Keyboard keyboard = Keyboard.current;
         Mouse mouse = Mouse.current;
 
-        if (keyboard == null)
+        if (keyboard == null || PauseMenu.IsPaused)
         {
             ResetAll();
             return;

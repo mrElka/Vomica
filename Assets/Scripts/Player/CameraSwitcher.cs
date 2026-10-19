@@ -229,6 +229,8 @@ public class CameraSwitcher : MonoBehaviour
     /// <summary>Читает дельту мыши и применяет её к активной камере.</summary>
     private void HandleLookInput()
     {
+        if (PauseMenu.IsPaused) return;
+
         Mouse mouse = Mouse.current;
         if (mouse == null) return;
 
