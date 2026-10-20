@@ -113,15 +113,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void OnApplicationFocus(bool hasFocus)
-    {
-        if (hasFocus && _lockCursorOnStart)
-        {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-        }
-    }
-
     public void OnMove(InputValue val)
     {
         if (inputHandler == null)

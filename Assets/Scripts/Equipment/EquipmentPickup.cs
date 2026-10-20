@@ -19,13 +19,13 @@ namespace CharacterEquipment
         [SerializeField] private Vector3 modelOffset = Vector3.zero;
 
         [Tooltip("Вращать лежащий предмет, чтобы его было заметно. 0 — не вращать")]
-        [SerializeField] private float spinSpeed = 45f;
+        [SerializeField] private float spinSpeed = 45f; //убрать вращение
 
         [Tooltip("Пауза перед тем как предмет можно поднять. Нужна выброшенным из рук")]
         [SerializeField, Min(0f)] private float pickupDelay = 0f;
 
         private GameObject model;
-        private float readyAt;
+        private float readyAt = 0f;
 
         public EquipmentItem Item => item;
 
