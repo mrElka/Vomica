@@ -15,7 +15,7 @@ MonoBehaviour:
   itemId: weapon_4
   displayName: "\u041C\u0435\u0447"
   description: 
-  icon: {fileID: 21300000, guid: 17bbbc846fd054d43a10bf0d43c460a8, type: 3}
+  icon: {fileID: 21300000, guid: c56c09df14ddc0f4c80889ce836e4031, type: 3}
   category: 2
   weaponSubCategory: 1
   modelPrefab: {fileID: 6243975336065274347, guid: 539254f32cc81ff46871290941a17e7e, type: 3}

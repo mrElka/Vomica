@@ -15,7 +15,7 @@ MonoBehaviour:
   itemId: helm_t4
   displayName: "\u041F\u0440\u043E\u0432\u043E\u043A\u0430\u0442\u043E\u0440"
   description: 
-  icon: {fileID: 21300000, guid: 692decbb3c864cb4192d8b632cfc0c9e, type: 3}
+  icon: {fileID: 21300000, guid: f7c75b2c02a1e634c951d0205d886b92, type: 3}
   category: 0
   weaponSubCategory: 0
   modelPrefab: {fileID: 8672842996900556143, guid: 7858a0ac5ac84694ebc4962bfde0fd6b, type: 3}

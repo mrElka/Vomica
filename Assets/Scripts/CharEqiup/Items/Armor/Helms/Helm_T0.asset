@@ -15,10 +15,10 @@ MonoBehaviour:
   itemId: helm_t0
   displayName: "\u0412\u0435\u0434\u0440\u043E"
   description: 
-  icon: {fileID: 21300000, guid: 4ea51d6239421b54995c9bbb0c1fd33d, type: 3}
+  icon: {fileID: 21300000, guid: 47c1674e4fde1a34187bc21a99dfc0f2, type: 3}
   category: 0
   weaponSubCategory: 0
-  modelPrefab: {fileID: 3145123412769338268, guid: 295f2bbc1e6a38b43884396f5ba7a135, type: 3}
+  modelPrefab: {fileID: 5140449348938565207, guid: 837accad6e38f6b4197a7999fb63367c, type: 3}
   modelPrefabLeft: {fileID: 0}
   holdPose: 0
   weaponClass: 0
