@@ -172,8 +172,7 @@ public class PlayerArmor : MonoBehaviour
 
     private void Awake()
     {
-        if (_bodyBar == null || _helmetBar == null)
-            CreateBars();
+        
     }
 
     private void Update()

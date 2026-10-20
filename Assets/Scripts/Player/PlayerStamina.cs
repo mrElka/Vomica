@@ -114,9 +114,6 @@ public class PlayerStamina : MonoBehaviour
     {
         _currentStamina = Mathf.Clamp(_currentStamina, 0f, _maxStamina);
 
-        if (staminaBar == null)
-            staminaBar = StaminaBar.CreateScreenBar();
-
         if (staminaBar != null)
         {
             staminaBar.SetMaxStamina(_maxStamina);
