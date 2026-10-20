@@ -202,10 +202,13 @@ public class PlayerController : MonoBehaviour
     /// <summary>Проверяет землю под игроком через Raycast вниз.</summary>
     private void CheckGround()
     {
-        float rayLength = (_characterController.height / 2f) + _groundOffset;
+        // Bounds уже учитывает center CharacterController, поэтому проверка не зависит
+        // от положения капсулы относительно transform игрока.
+        Bounds controllerBounds = _characterController.bounds;
+        float rayLength = controllerBounds.extents.y + _groundOffset;
 
         _isGrounded = Physics.Raycast(
-            transform.position,
+            controllerBounds.center,
             Vector3.down,
             rayLength,
             _groundMask
@@ -359,9 +362,13 @@ public class PlayerController : MonoBehaviour
     {
         if (_characterController == null) return;
 
-        float rayLength = (_characterController.height / 2f) + _groundOffset;
+        Bounds controllerBounds = _characterController.bounds;
+        float rayLength = controllerBounds.extents.y + _groundOffset;
 
         Gizmos.color = Color.red;
-        Gizmos.DrawLine(transform.position, transform.position + Vector3.down * rayLength);
+        Gizmos.DrawLine(
+            controllerBounds.center,
+            controllerBounds.center + Vector3.down * rayLength
+        );
     }
 }
