@@ -40,7 +40,7 @@ public class PlayerCombat : MonoBehaviour
 
     [Header("Links")]
     [SerializeField] private CinemachineCamera _cam;
-    [SerializeField] private PlayerController _playerController;
+    [SerializeField] private PlayerMovement _playerMovement;
     [SerializeField] private PlayerHealth _playerHealth;
     [SerializeField] private PlayerStamina _stamina;
     [SerializeField] private InputHandler inputHandler;
@@ -142,7 +142,7 @@ public class PlayerCombat : MonoBehaviour
         get
         {
             if (_playerHealth != null && _playerHealth.IsDead) return false;
-            if (_playerController != null && (!_playerController.CanMove || _playerController.IsDashing)) return false;
+            if (_playerMovement != null && (!_playerMovement.CanMove || _playerMovement.IsDashing)) return false;
             if (Time.time < _nextAttackTime) return false;
             if (_stamina != null && !_stamina.CanSpend(StaminaCost)) return false;
             return true;
@@ -151,7 +151,7 @@ public class PlayerCombat : MonoBehaviour
 
     private void Awake()
     {
-        if (_playerController == null) _playerController = GetComponent<PlayerController>();
+        if (_playerMovement == null) _playerMovement = GetComponent<PlayerMovement>();
         if (_playerHealth == null) _playerHealth = GetComponent<PlayerHealth>();
         if (inputHandler == null) inputHandler = GetComponent<InputHandler>();
         if (_stamina == null) _stamina = GetComponent<PlayerStamina>();
@@ -285,7 +285,7 @@ public class PlayerCombat : MonoBehaviour
         string reason = "";
 
         if (_playerHealth != null && _playerHealth.IsDead) reason = "dead";
-        else if (_playerController != null && _playerController.IsDashing) reason = "dashing";
+        else if (_playerMovement != null && _playerMovement.IsDashing) reason = "dashing";
         else if (Time.time < _nextAttackTime) reason = $"cooldown {(_nextAttackTime - Time.time):F2}s";
         else if (_stamina != null && !_stamina.CanSpend(StaminaCost))
             reason = $"stamina {_stamina.CurrentStamina:F0}/{StaminaCost:F0}";

@@ -24,7 +24,7 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private string _menuSceneName = "SampleScene";
     [SerializeField] private float _loadMenuDelay = 1f;
 
-    private PlayerController _playerController;
+    private PlayerMovement _playerMovement;
     private bool _isDead;
 
     private float _hpExact;
@@ -50,7 +50,7 @@ public class PlayerHealth : MonoBehaviour
         }
 
         Instance = this;
-        _playerController = GetComponent<PlayerController>();
+        _playerMovement = GetComponent<PlayerMovement>();
 
         if (armor == null)
             armor = GetComponent<PlayerArmor>();
@@ -155,7 +155,7 @@ public class PlayerHealth : MonoBehaviour
         if (_isDead) return;
 
         _isDead = true;
-        _playerController?.SetCanMove(false);
+        _playerMovement?.SetCanMove(false);
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;

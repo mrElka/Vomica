@@ -758,6 +758,7 @@ GameObject:
   - component: {fileID: 483721269}
   - component: {fileID: 483721271}
   - component: {fileID: 483721270}
+  - component: {fileID: 483721280}
   - component: {fileID: 483721272}
   - component: {fileID: 483721273}
   - component: {fileID: 483721274}
@@ -883,14 +884,27 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afac92c3aed9cb64d9d352c13f8f8345, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+  _visualRoot: {fileID: 1018133691}
+  _lockCursorOnStart: 1
+--- !u!114 &483721280
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 483721264}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dbe83ef6f0d4a60b268d8f1c9a75b42, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   _characterController: {fileID: 483721269}
   _cam: {fileID: 145987684}
   inputHandler: {fileID: 483721274}
   stamina: {fileID: 0}
   _visualRoot: {fileID: 1018133691}
-  _lockCursorOnStart: 1
   _speed: 5
   _runMultiplier: 1.6
   _airControl: 0.5
@@ -979,7 +993,7 @@ MonoBehaviour:
   _classHitRadius: 0.6
   _singleTargetPerSwing: 1
   _cam: {fileID: 145987684}
-  _playerController: {fileID: 483721270}
+  _playerMovement: {fileID: 483721280}
   _playerHealth: {fileID: 483721272}
   _stamina: {fileID: 0}
   inputHandler: {fileID: 483721274}
@@ -1111,7 +1125,7 @@ MonoBehaviour:
   - Hand.L
   - Hand.R
   inputHandler: {fileID: 483721274}
-  playerController: {fileID: 483721270}
+  playerMovement: {fileID: 483721280}
   playerCombat: {fileID: 483721273}
   _logCameraSwitch: 0
 --- !u!114 &483721277

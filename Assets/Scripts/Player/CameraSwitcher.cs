@@ -7,13 +7,13 @@ using UnityEngine.InputSystem;
 /// 1. По клавише V (или через <see cref="InputHandler.ToggleViewPressed"/>) переключает активную камеру.
 /// 2. В FP скрывает меши тела игрока (руки и оружие остаются видимыми), в TP — показывает.
 /// 3. Управляет поворотом камеры мышью: в FP — через CinemachinePanTilt, в TP — через CinemachineOrbitalFollow.
-/// 4. Сообщает PlayerController и PlayerCombat, какая камера сейчас активна — чтобы направление атаки
+/// 4. Сообщает PlayerMovement и PlayerCombat, какая камера сейчас активна — чтобы направление атаки
 ///    и движения считались от нужной камеры.
 ///
 /// Зависимости:
 /// - Cinemachine (первая и третья камера, PanTilt, OrbitalFollow).
 /// - InputHandler — читает нажатие V и движение мыши.
-/// - PlayerController и PlayerCombat — получают ссылку на активную камеру.
+/// - PlayerMovement и PlayerCombat — получают ссылку на активную камеру.
 /// - PlayerAnimatorUtility — ищет визуальный корень модели, если он не назначен вручную.
 /// </summary>
 public class CameraSwitcher : MonoBehaviour
@@ -59,8 +59,8 @@ public class CameraSwitcher : MonoBehaviour
     [Tooltip("Обработчик ввода. Пусто — будет найден на этом же объекте")]
     [SerializeField] private InputHandler inputHandler;
 
-    [Tooltip("Контроллер игрока. Пусто — будет найден на этом же объекте")]
-    [SerializeField] private PlayerController playerController;
+    [Tooltip("Компонент передвижения игрока. Пусто — будет найден на этом же объекте")]
+    [SerializeField] private PlayerMovement playerMovement;
 
     [Tooltip("Боевая система игрока. Пусто — будет найдена на этом же объекте")]
     [SerializeField] private PlayerCombat playerCombat;
@@ -102,7 +102,7 @@ public class CameraSwitcher : MonoBehaviour
     private void ResolveReferences()
     {
         if (inputHandler == null) inputHandler = GetComponent<InputHandler>();
-        if (playerController == null) playerController = GetComponent<PlayerController>();
+        if (playerMovement == null) playerMovement = GetComponent<PlayerMovement>();
         if (playerCombat == null) playerCombat = GetComponent<PlayerCombat>();
         if (_followTarget == null) _followTarget = transform;
 
@@ -152,7 +152,7 @@ public class CameraSwitcher : MonoBehaviour
 
     /// <summary>
     /// Применяет текущий режим: включает нужную камеру, выключает другую,
-    /// сообщает ссылку PlayerController/PlayerCombat, обновляет видимость тела.
+    /// сообщает ссылку PlayerMovement/PlayerCombat, обновляет видимость тела.
     /// </summary>
     private void Apply()
     {
@@ -168,7 +168,7 @@ public class CameraSwitcher : MonoBehaviour
         CinemachineCamera active = ActiveCamera;
         if (active == null) return;
 
-        if (playerController != null) playerController.ActiveCamera = active;
+        if (playerMovement != null) playerMovement.ActiveCamera = active;
         if (playerCombat != null) playerCombat.ActiveCamera = active;
 
         UpdateBodyVisibility();
