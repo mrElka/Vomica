@@ -66,6 +66,9 @@ public class PlayerCombat : MonoBehaviour
         set => _cam = value;
     }
 
+    /// <summary>Идёт ли сейчас фаза замаха. Нужно ботам, чтобы блокировать удар.</summary>
+    public bool IsWindingUp => _attackRoutine != null;
+
     /// <summary>true — у игрока выбрано оружие из таблицы, значит показатели идут из баланса.</summary>
     private bool HasClassWeapon => _weapons != null && _weapons.HasWeapon;
 
@@ -205,7 +208,7 @@ public class PlayerCombat : MonoBehaviour
         _attackRoutine = null;
     }
 
-    /// <summary>Наносит урон всем противникам в сфере перед игроком.</summary>
+    /// <summary>Наносит урон всем IDamageable в сфере перед игроком.</summary>
     public void DealDamage()
     {
         float radius = HitRadius;
@@ -214,32 +217,37 @@ public class PlayerCombat : MonoBehaviour
         Collider[] hits = Physics.OverlapSphere(origin, radius);
 
         DamagePacket packet = CurrentDamage;
-        Enemy nearest = null;
+        IDamageable nearest = null;
         float nearestDistance = float.MaxValue;
 
         foreach (Collider hit in hits)
         {
             if (hit.transform == transform || hit.transform.IsChildOf(transform)) continue;
 
-            Enemy enemy = hit.GetComponentInParent<Enemy>();
-            if (enemy == null || enemy.IsDead) continue;
+            IDamageable target = hit.GetComponentInParent<IDamageable>();
+            if (target == null) continue;
+
+            // Пропускаем мёртвых
+            if (target is EnemyNew enemy && enemy.IsDead) continue;
+            if (target is PlayerHealth ph && ph.IsDead) continue;
+            if (target is BotHealth bh && bh.IsDead) continue;
 
             if (!_singleTargetPerSwing)
             {
-                enemy.TakeDamage(packet);
+                target.TakeDamage(packet, BodyZone.Torso);
                 continue;
             }
 
-            float distance = Vector3.SqrMagnitude(enemy.transform.position - origin);
+            float distance = Vector3.SqrMagnitude(hit.transform.position - origin);
             if (distance < nearestDistance)
             {
                 nearestDistance = distance;
-                nearest = enemy;
+                nearest = target;
             }
         }
 
         if (_singleTargetPerSwing && nearest != null)
-            nearest.TakeDamage(packet);
+            nearest.TakeDamage(packet, BodyZone.Torso);
     }
 
     /// <summary>Направление удара: вдоль камеры, если она есть, иначе вдоль игрока.</summary>

@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 /// Урон проходит через PlayerArmor — по зоне попадания (голова — шлем, остальное — тело).
 /// HP хранится с дробной частью, потому что формула брони даёт нецелый урон.
 /// </summary>
-public class PlayerHealth : MonoBehaviour
+public class PlayerHealth : MonoBehaviour, IDamageable
 {
     /// <summary>Синглтон-доступ к здоровью игрока.</summary>
     public static PlayerHealth Instance { get; private set; }
@@ -92,6 +92,12 @@ public class PlayerHealth : MonoBehaviour
 
         if (_currentHealth <= 0)
             Die();
+    }
+
+    /// <summary>Реализация IDamageable.TakeDamage(float) — приводим к плоскому урону.</summary>
+    void IDamageable.TakeDamage(float amount)
+    {
+        TakeDamage(Mathf.RoundToInt(amount));
     }
 
     /// <summary>
