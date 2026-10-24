@@ -42,6 +42,7 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private CinemachineCamera _cam;
     [SerializeField] private PlayerController _playerController;
     [SerializeField] private PlayerHealth _playerHealth;
+    [SerializeField] private BotHealth _botHealth;
     [SerializeField] private PlayerStamina _stamina;
     [SerializeField] private InputHandler inputHandler;
 
